@@ -28,25 +28,21 @@ def get_db():
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="Could not validate credentials",
-    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            raise credentials_exception
+            raise HTTPException(status_code=401, detail="Invalid token payload")
     except JWTError:
-        raise credentials_exception
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user = db.query(models.User).filter(models.User.email == email).first()
-    if user is None:
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Email not verified")
-
     return user
+
 
 
 # Password helpers

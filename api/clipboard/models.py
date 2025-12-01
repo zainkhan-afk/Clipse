@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
 from api.core.database import Base
+from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
@@ -7,7 +9,44 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    first_name = Column(String, unique=False, index=False, nullable=False)
-    last_name = Column(String, unique=False, index=False, nullable=True)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=True)
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String, nullable=True)
+
+    clipboards = relationship("Clipboard", back_populates="user")
+    devices = relationship("Device", back_populates="user")
+
+
+class Clipboard(Base):
+    __tablename__ = "clipboards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="clipboards")
+    data = relationship("ClipboardData", back_populates="clipboard")
+
+
+class Device(Base):
+    __tablename__ = "devices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    added_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="devices")
+
+
+class ClipboardData(Base):
+    __tablename__ = "clipboard_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    clipboard_id = Column(Integer, ForeignKey("clipboards.id"), nullable=False)
+    content = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    clipboard = relationship("Clipboard", back_populates="data")

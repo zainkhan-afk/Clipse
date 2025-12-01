@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from api.clipboard import auth
 
@@ -6,7 +6,11 @@ router = APIRouter()
 
 @router.post("/auth/register")
 def register(email: str, password: str, first_name: str, last_name: str, db: Session = Depends(auth.get_db)):
-    user = auth.register_user(db, email, password, first_name, last_name)
+    try:
+        user = auth.register_user(db, email, password, first_name, last_name)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     verification_link = f"http://localhost:8000/clipboard/auth/verify?token={user.verification_token}"
     return {"message": "Registered", "verification_link": verification_link}
 
@@ -14,10 +18,15 @@ def register(email: str, password: str, first_name: str, last_name: str, db: Ses
 def verify_email(token: str, db: Session = Depends(auth.get_db)):
     email = auth.verify_email_verification_token(token)
     if not email:
-        return {"error": "Invalid or expired token"}
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    
     user = auth.get_user_by_email(db, email)
     if not user:
-        return {"error": "User not found"}
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.is_verified:
+        return {"message": "Email already verified"}
+
     user.is_verified = True
     user.verification_token = None
     db.commit()
@@ -27,7 +36,7 @@ def verify_email(token: str, db: Session = Depends(auth.get_db)):
 def login(email: str, password: str, db: Session = Depends(auth.get_db)):
     user = auth.authenticate_user(db, email, password)
     if not user:
-        return {"error": "Invalid credentials or email not verified"}
+        raise HTTPException(status_code=401, detail="Invalid credentials or email not verified")
     token = auth.create_access_token({"sub": email})
     return {"access_token": token, "token_type": "bearer"}
 
