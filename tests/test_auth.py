@@ -7,9 +7,11 @@ BASE_URL = "http://localhost:8000/clipboard"
 # ------------------------------
 email = "testuser@example.com"
 password = "test123"
+first_name = "test"
+last_name = "tset"
 
 print("Registering user...")
-register_resp = requests.post(f"{BASE_URL}/auth/register", params={"email": email, "password": password})
+register_resp = requests.post(f"{BASE_URL}/auth/register", params={"email": email, "password": password, "first_name" : first_name, "last_name" : last_name})
 register_data = register_resp.json()
 print("Register response:", register_data)
 
