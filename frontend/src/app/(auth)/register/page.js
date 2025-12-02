@@ -10,7 +10,7 @@ export default function Login() {
     
     return (
     <div className="w-full max-w-md mx-auto bg-gray-500 bg-opacity-80 rounded-lg p-8 shadow-lg">
-        <h2 className="text-white text-2xl font-semibold mb-6">
+        <h2 className="mb-6">
             Register
         </h2>
 
