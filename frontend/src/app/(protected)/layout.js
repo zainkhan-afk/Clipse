@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
     <div className="flex min-h-screen w-full">
         {/* <Navbar/> */}
         <Sidebar/>
-        <div className="ml-64 px-4">
+        <div className="flex-1 w-full ml-64 px-2 bg-gray-600 bg-opacity-80 rounded-lg shadow-lg">
             {children}
         </div>
     </div>

@@ -129,7 +129,7 @@ export default function Sidebar() {
             <div className="px-4 py-3 hover:bg-gray-800 cursor-pointer flex items-center gap-3">
                 <User className="w-8 h-8 rounded-full bg-gray-700 p-1 flex-shrink-0" />
                 <span
-                className="overflow-hidden whitespace-nowrap"
+                    className="overflow-hidden whitespace-nowrap"
                 >
                 Profile
                 </span>
