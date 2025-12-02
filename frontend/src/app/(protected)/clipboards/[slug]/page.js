@@ -1,11 +1,11 @@
 "use client"
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { Copy, Trash } from "lucide-react";
+import { Copy, Trash, Paperclip } from "lucide-react";
 
 
 export default function ClipboardPage() {
-    const params = useParams(); // hook works only in client components
+    const params = useParams();
     const { slug } = params;
     const [clipboardData, setClipboardData] = useState({
         id: slug,
@@ -18,14 +18,17 @@ export default function ClipboardPage() {
 
 
   return (
-        <div className="min-h-screen flex flex-col p-8">
+        <div className="min-h-screen flex flex-col p-8 text-gray-800">
             <h1>Clipboard</h1>
             <h2>{clipboardData.name}</h2>
 
             <div className="flex-1 flex-col bg-gray-800 bg-opacity-10 rounded-lg p-8 shadow-lg overflow-y-auto">
-                <div className="flex flex-col bg-gray-300 bg-opacity-10 rounded-lg shadow-lg p-1">
-                    <input></input>
-                    <button>Send</button>
+                <div className="flex flex-col bg-gray-300 bg-opacity-10 rounded-lg shadow-lg p-4">
+                    <textarea className="h-30 rounded-lg"></textarea>
+                    <div className="flex justify-end items-center mt-2 gap-2">
+                        <Paperclip className="w-5 h-5"/>
+                        <button className="rounded-lg bg-blue-300 px-4 py-1">Send</button>
+                    </div>
                 </div>
                 {clipboardData.messages.map((message) => (
                     <div
