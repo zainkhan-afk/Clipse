@@ -2,14 +2,14 @@
 import { apiFetch } from "./api";
 
 // Login function
-export const login = async (email, password) => {
+export const login = async (userData) => {
   const data = await apiFetch("/auth/login", {
     method: "POST",
-    body: { email, password },
+    body: userData,
   });
 
   // Save token to localStorage
-  localStorage.setItem("token", data.accessToken);
+  localStorage.setItem("token", data.access_token);
 
   return data;
 };
@@ -23,8 +23,8 @@ export const register = async (userData) => {
   });
 
   // Optional: automatically log in after registration
-  if (data.accessToken) {
-    localStorage.setItem("token", data.accessToken);
+  if (data.access_token) {
+    localStorage.setItem("token", data.access_token);
   }
 
   return data;

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from api.clipboard import auth
-from api.clipboard.schemas import RegisterRequest
+from api.clipboard.schemas import RegisterRequest, LoginRequest
 
 router = APIRouter()
 
@@ -35,11 +35,11 @@ def verify_email(token: str, db: Session = Depends(auth.get_db)):
     return {"message": "Email verified successfully"}
 
 @router.post("/auth/login")
-def login(email: str, password: str, db: Session = Depends(auth.get_db)):
-    user = auth.authenticate_user(db, email, password)
+def login(request: LoginRequest, db: Session = Depends(auth.get_db)):
+    user = auth.authenticate_user(db, request.email, request.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials or email not verified")
-    token = auth.create_access_token({"sub": email})
+    token = auth.create_access_token({"sub": request.email})
     return {"access_token": token, "token_type": "bearer"}
 
 
