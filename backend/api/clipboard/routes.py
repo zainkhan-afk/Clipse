@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from api.clipboard import auth
+from api.clipboard.schemas import RegisterRequest
 
 router = APIRouter()
 
 @router.post("/auth/register")
-def register(email: str, password: str, first_name: str, last_name: str, db: Session = Depends(auth.get_db)):
-    print(email, password, first_name, last_name)
+def register(request: RegisterRequest, db: Session = Depends(auth.get_db)):
+    print(request)
     try:
-        user = auth.register_user(db, email, password, first_name, last_name)
+        user = auth.register_user(db, request.email, request.password, request.first_name, request.last_name)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     

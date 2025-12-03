@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { register } from "@/api/auth";
 
-export default function Login() {
+export default function Register() {
     const [registrationData, setRegistrationData] = useState({
         first_name: "",
         last_name: "",
@@ -14,7 +14,7 @@ export default function Login() {
     
     async function handleRegistration() {
         try {
-            const data  = await register(registrationData.first_name, registrationData.last_name, registrationData.email, registrationData.password);
+            const data  = await register(registrationData);
             console.log("Registered successfully:", data);
         }
         catch (err) {

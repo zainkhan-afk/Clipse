@@ -16,11 +16,10 @@ export const login = async (email, password) => {
 
 
 // Register
-export const register = async (first_name, last_name, email, password) => {
-  console.log(first_name, last_name, email, password);
+export const register = async (userData) => {
   const data = await apiFetch("/auth/register", {
     method: "POST",
-    body: { email, password, first_name, last_name},
+    body: userData,
   });
 
   // Optional: automatically log in after registration
