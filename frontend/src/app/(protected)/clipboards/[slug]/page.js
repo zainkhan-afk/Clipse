@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Copy, Trash, Paperclip } from "lucide-react";
 
+import TooltipWrapper from "@/components/primitives/tooltipwrapper";
+import InteractiveIcon from "@/components/primitives/interactiveicon";
 
 export default function ClipboardPage() {
     const params = useParams();
@@ -24,9 +26,12 @@ export default function ClipboardPage() {
 
             <div className="flex-1 flex-col bg-gray-800 bg-opacity-10 rounded-lg p-8 shadow-lg overflow-y-auto">
                 <div className="flex flex-col bg-gray-300 bg-opacity-10 rounded-lg shadow-lg p-4">
-                    <textarea className="h-30 rounded-lg"></textarea>
+                    <textarea className="h-30 border border-black rounded-lg"></textarea>
                     <div className="flex justify-end items-center mt-2 gap-2">
-                        <Paperclip className="w-5 h-5"/>
+                        {/* <Paperclip className="w-5 h-5"/> */}
+                        <TooltipWrapper label="Attach">
+                            <InteractiveIcon icon={Paperclip} onClick={() => console.log("Attach Clicked")}/>
+                        </TooltipWrapper>
                         <button className="rounded-lg bg-blue-300 px-4 py-1">Send</button>
                     </div>
                 </div>
@@ -36,15 +41,31 @@ export default function ClipboardPage() {
                         className="flex flex-col bg-gray-400 rounded-lg p-2 mt-2"
                     >
                         <p>
-                            {message.data}
+                            {message.data.toString()}
                         </p>
                         
                         <div className="flex items-center justify-between px-2">
-                            <span> {message.date} </span>
+                            <span> {message.date.toString()} </span>
 
                             <div className="flex gap-2">
-                                <Copy className="w-4.5 h-4.5" />
-                                <Trash className="w-4.5 h-4.5" />
+                                <TooltipWrapper label="Copy">
+                                    <InteractiveIcon icon={Copy} onClick={() => console.log("Copy Clicked")}/>
+                                </TooltipWrapper>
+
+                                <TooltipWrapper label="Delete">
+                                    <InteractiveIcon icon={Trash} onClick={() => console.log("Delete Clicked")}/>
+                                </TooltipWrapper>
+                                {/* <Copy className="w-4.5 h-4.5"/> */}
+                                {/* <Trash 
+                                    className="w-6 h-6
+                                        hover:text-blue-400 
+                                        hover:bg-gray-700 
+                                        hover:rounded 
+                                        p-1
+                                        active:scale-90 
+                                        transition-all" 
+                                    onClick={() => console.log("Delete clicked!")}
+                                /> */}
                             </div>
                         </div>
                     </div>
