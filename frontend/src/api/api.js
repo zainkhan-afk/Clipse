@@ -1,5 +1,5 @@
 // api.js
-const API_BASE_URL = process.env.API_BASE_URL; // your backend URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; // your backend URL
 
 // Helper to get token from localStorage
 const getToken = () => localStorage.getItem("token");

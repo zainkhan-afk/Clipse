@@ -17,9 +17,10 @@ export const login = async (email, password) => {
 
 // Register
 export const register = async (first_name, last_name, email, password) => {
+  console.log(first_name, last_name, email, password);
   const data = await apiFetch("/auth/register", {
     method: "POST",
-    body: { first_name, last_name, email, password },
+    body: { email, password, first_name, last_name},
   });
 
   // Optional: automatically log in after registration
@@ -37,5 +38,5 @@ export const logout = () => {
 
 // Example: get user profile
 export const getProfile = async () => {
-  return await apiFetch("/me");
+  return await apiFetch("/auth/me");
 };

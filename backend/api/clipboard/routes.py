@@ -6,6 +6,7 @@ router = APIRouter()
 
 @router.post("/auth/register")
 def register(email: str, password: str, first_name: str, last_name: str, db: Session = Depends(auth.get_db)):
+    print(email, password, first_name, last_name)
     try:
         user = auth.register_user(db, email, password, first_name, last_name)
     except Exception as e:

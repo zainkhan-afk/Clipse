@@ -88,7 +88,7 @@ def register_user(db: Session, email: str, password: str, first_name: str, last_
         first_name = first_name,
         last_name = last_name,
         verification_token=verification_token,
-        is_verified=False,
+        is_verified=True,
     )
     db.add(new_user)
     db.commit()

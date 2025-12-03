@@ -1,59 +1,81 @@
 "use client";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { register } from "@/api/auth";
 
 export default function Login() {
+    const [registrationData, setRegistrationData] = useState({
+        first_name: "",
+        last_name: "",
+        email: "",
+        password: ""
+    });
     const router = useRouter();
     
-    function handleRegistration() {
-        console.log("Register button clicked");
+    async function handleRegistration() {
+        try {
+            const data  = await register(registrationData.first_name, registrationData.last_name, registrationData.email, registrationData.password);
+            console.log("Registered successfully:", data);
+        }
+        catch (err) {
+            console.error("Registration failed:", err.message);
+        }
     }
     
     return (
-    <div className="w-full max-w-md mx-auto bg-gray-500 bg-opacity-80 rounded-lg p-8 shadow-lg">
-        <h2 className="mb-6">
-            Register
-        </h2>
+        <div className="w-full max-w-md mx-auto bg-gray-500 bg-opacity-80 rounded-lg p-8 shadow-lg">
+            <h2 className="mb-6">
+                Register
+            </h2>
 
-        <input
-            type="email"
-            placeholder="Email"
-            className="w-full mb-4 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+            <input
+                type="email"
+                placeholder="Email"
+                className="w-full mb-4 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={registrationData.email}
+                onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
+            />
 
-        <input
-            type="text"
-            placeholder="First Name"
-            className="w-full mb-4 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+            <input
+                type="text"
+                placeholder="First Name"
+                className="w-full mb-4 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={registrationData.first_name}
+                onChange={(e) => setRegistrationData({ ...registrationData, first_name: e.target.value })}
+            />
 
-        <input
-            type="text"
-            placeholder="Last Name"
-            className="w-full mb-4 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+            <input
+                type="text"
+                placeholder="Last Name"
+                className="w-full mb-4 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={registrationData.last_name}
+                onChange={(e) => setRegistrationData({ ...registrationData, last_name: e.target.value })}
+            />
 
-        <input
-            type="password"
-            placeholder="Password"
-            className="w-full mb-6 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        
-        <button 
-            className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition"
-            onClick={handleRegistration}
-        >
-            Register
-        </button>
+            <input
+                type="password"
+                placeholder="Password"
+                className="w-full mb-6 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={registrationData.password}
+                onChange={(e) => setRegistrationData({ ...registrationData, password: e.target.value })}
+            />
+            
+            <button 
+                className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition"
+                onClick={handleRegistration}
+            >
+                Register
+            </button>
 
-        <p className="pt-5">Already have an account?</p>
+            <p className="pt-5">Already have an account?</p>
 
-        <button 
-            className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition"
-            onClick={() => router.push("/login")}
-        >
-            Login
-        </button>
-    </div>
+            <button 
+                className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition"
+                onClick={() => router.push("/login")}
+            >
+                Login
+            </button>
+        </div>
 
   );
 }
