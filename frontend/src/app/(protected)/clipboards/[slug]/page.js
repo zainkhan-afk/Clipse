@@ -1,15 +1,18 @@
 "use client"
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { Copy, Trash, Paperclip } from "lucide-react";
+import { Copy, Trash, Paperclip, Delete } from "lucide-react";
 
-import TooltipWrapper from "@/components/primitives/tooltipwrapper";
-import InteractiveIcon from "@/components/primitives/interactiveicon";
+import TooltipWrapper from "@/components/primitives/TooltipWrapper";
+import InteractiveIcon from "@/components/primitives/InteractiveIcon";
+import DeleteMessageConfirmationModal from "@/components/modals/DeleteMessage";
 
 export default function ClipboardPage() {
     const params = useParams();
     const { slug } = params;
-    const [textToSend, setTextToSend] = useState("")
+    const [textToSend, setTextToSend] = useState("");
+    const [messageToDelete, setMessageToDelete] = useState(null);
+    const [messageDeleteModalOpen, setMessageDeleteModalOpen] = useState(false);
     const [clipboardData, setClipboardData] = useState({
         id: slug,
         name: "Clipboard Name",
@@ -20,13 +23,31 @@ export default function ClipboardPage() {
     });
 
     const handleSendToClipboard = (text) => {
-        console.log("Sending `", text,"` to clipboard")
+        if (text){
+            console.log("Sending `", text,"` to clipboard")
+            // Add API call here
+            setTextToSend("");
+        }
     }
 
     const handleCopy = (text) => {
         navigator.clipboard.writeText(text).then(() => {
             console.log("Copied:", text);
         });
+    };
+
+    const handleOpenMessageDeleteModal = (message) => {
+        setMessageToDelete(message);
+        setMessageDeleteModalOpen(true);
+    }
+
+    const handleDeleteMessage = () => {
+        if (messageToDelete) {
+            // API call to delete the message
+            console.log("Message deleted", messageToDelete);
+            setMessageToDelete(null);
+        }
+        setMessageDeleteModalOpen(false);
     };
 
 
@@ -39,7 +60,7 @@ export default function ClipboardPage() {
                 <div className="flex flex-col bg-gray-300 bg-opacity-10 rounded-lg shadow-lg p-4">
                     
                     <textarea 
-                        className="h-30 border border-black rounded-lg" 
+                        className="h-30 border border-black rounded-lg p-2" 
                         value={textToSend}
                         onChange={(e) => setTextToSend(e.target.value)}
                     />
@@ -71,13 +92,22 @@ export default function ClipboardPage() {
                                 </TooltipWrapper>
 
                                 <TooltipWrapper label="Delete">
-                                    <InteractiveIcon icon={Trash} onClick={() => console.log("Delete Clicked")}/>
+                                    <InteractiveIcon icon={Trash} onClick={() => handleOpenMessageDeleteModal(message)}/>
                                 </TooltipWrapper>
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
+
+            
+            <DeleteMessageConfirmationModal
+                isOpen={messageDeleteModalOpen}
+                onClose={() => setMessageDeleteModalOpen(false)}
+                onConfirm={handleDeleteMessage}
+            />
+
+
         </div>
 
     );
