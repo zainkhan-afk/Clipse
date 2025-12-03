@@ -9,14 +9,19 @@ import InteractiveIcon from "@/components/primitives/interactiveicon";
 export default function ClipboardPage() {
     const params = useParams();
     const { slug } = params;
+    const [textToSend, setTextToSend] = useState("")
     const [clipboardData, setClipboardData] = useState({
         id: slug,
         name: "Clipboard Name",
         messages: [
-            {id: 1, type: "text", date: Date(), data: "this is a text"},
-            {id: 2, type: "text", date: Date(), data: "this is another text"},
+            {id: 1, type: "text", date: new Date(2024, 0, 15), data: "this is a text"},
+            {id: 2, type: "text", date: new Date(2024, 0, 16), data: "this is another text"},
         ],
     });
+
+    const handleSendToClipboard = (text) => {
+        console.log("Sending `", text,"` to clipboard")
+    }
 
     const handleCopy = (text) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -32,12 +37,20 @@ export default function ClipboardPage() {
 
             <div className="flex-1 flex-col bg-gray-800 bg-opacity-10 rounded-lg p-8 shadow-lg overflow-y-auto">
                 <div className="flex flex-col bg-gray-300 bg-opacity-10 rounded-lg shadow-lg p-4">
-                    <textarea className="h-30 border border-black rounded-lg"></textarea>
+                    
+                    <textarea 
+                        className="h-30 border border-black rounded-lg" 
+                        value={textToSend}
+                        onChange={(e) => setTextToSend(e.target.value)}
+                    />
+                    
                     <div className="flex justify-end items-center mt-2 gap-2">
                         <TooltipWrapper label="Attach">
                             <InteractiveIcon icon={Paperclip} onClick={() => console.log("Attach Clicked")}/>
                         </TooltipWrapper>
-                        <button className="rounded-lg bg-blue-300 px-4 py-1">Send</button>
+                        <TooltipWrapper label="Send to Clipboard">
+                            <button className="rounded-lg bg-blue-300 px-4 py-1" onClick={() => handleSendToClipboard(textToSend) }>Send</button>
+                        </TooltipWrapper>
                     </div>
                 </div>
                 {clipboardData.messages.map((message) => (
@@ -46,7 +59,7 @@ export default function ClipboardPage() {
                         className="flex flex-col bg-gray-400 rounded-lg p-2 mt-2"
                     >
                         <p>
-                            {message.data.toString()}
+                            {message.data}
                         </p>
                         
                         <div className="flex items-center justify-between px-2">
