@@ -5,6 +5,8 @@ import {Computer, ClipboardListIcon, Clipboard, Home, User, Plus, Minus} from "l
 import Link from "next/link";
 import Image from "next/image";
 
+import CreateNewClipboardModal from "./modals/CreateNewClipboard";
+
 const navItems = [
         { 
             name: "Clipboards", 
@@ -15,28 +17,24 @@ const navItems = [
                 {id: 1, name: "Common"},
                 {id: 2, name: "Clipboard1"}
             ]
-        },
-        { 
-            name: "Devices", 
-            href: "/devices", 
-            icon: Computer, 
-            isOpen: false,
-            children: [
-                {id: 1, name: "PC"},
-                {id: 2, name: "Phone"}
-            ]
-        },
-    ];
-
-
-const clipboards = [
-        { name: "Common"},
-        { name: "Devices"},
+        }
+        // ,
+        // { 
+        //     name: "Devices", 
+        //     href: "/devices", 
+        //     icon: Computer, 
+        //     isOpen: false,
+        //     children: [
+        //         {id: 1, name: "PC"},
+        //         {id: 2, name: "Phone"}
+        //     ]
+        // },
     ];
 
 
 export default function Sidebar() {
     const [navigationItems, setNavigationItems] = useState(navItems);
+    const [createNewClipboardModalOpen, setCreateNewClipboardModalOpen] = useState(false);
     const [clipboards, setClipboards] = useState([
                                                     { name: "Common"},
                                                     { name: "Devices"},
@@ -51,6 +49,15 @@ export default function Sidebar() {
             )
         );
     };
+
+    const handleCreateNewClipboard = (clipboardData) => {
+        console.log("Creating new clipboard named", clipboardData);
+
+        // API call here to create the new clipboard
+
+        setCreateNewClipboardModalOpen(false);
+    }
+
     return (
         <div
             className="bg-gray-900 text-white h-full pt-1 pb-[40px] fixed left-0 top-0 z-40 w-64 flex flex-col justify-between" /* Keep min width enough for icons */
@@ -82,7 +89,7 @@ export default function Sidebar() {
                                 // href={href}
                                 // className=""
                             >
-                                <div className="flex items-center gap-3 px-4 py-2 hover:bg-gray-800 transition-colors">
+                                <div className="flex items-center gap-3 px-4 py-0 hover:bg-gray-800 transition-colors">
                                     {/* Fixed-size icon so it never shrinks */}
                                     <Icon className="w-5 h-5 flex-shrink-0" />
 
@@ -99,19 +106,26 @@ export default function Sidebar() {
                                         <Plus className="w-5 h-5 flex-shrink-0 cursor-pointer" onClick={() => toggle(name)} />
                                     )}
                                 </div>
-                                <div className="flex">
+                                <div className="flex flex-col">
                                     {/* Extra content only shown when open */}
                                     {isOpen && children && (
-                                    <div className="ml-12 mt-2 flex flex-col text-sm text-gray-300">
+                                    <div className="ml-10 mb-2 flex flex-col text-sm text-gray-300">
                                         {children.map((child) => (
                                             <Link
                                                 key={child.name}
                                                 href={`${href}/${child.id}`}
-                                                className="px-4 py-2 hover:bg-gray-700 rounded transition-colors text-sm"
+                                                className="block w-full px-2 py-1 hover:bg-gray-700 rounded transition-colors text-sm"
                                             >
                                                 {child.name}
                                             </Link>
                                         ))}
+
+                                        <span 
+                                            className="block cursor-pointer w-full px-2 hover:bg-gray-700 rounded transition-colors text-sm text-gray-600"
+                                            onClick={() => setCreateNewClipboardModalOpen(true)}
+                                        >
+                                            Create New Clipboard
+                                        </span>
                                     </div>
                                     )}
                                 </div>
@@ -135,6 +149,12 @@ export default function Sidebar() {
                 </span>
             </div>
 
+
+        <CreateNewClipboardModal 
+            isOpen={createNewClipboardModalOpen}
+            onClose={() => setCreateNewClipboardModalOpen(false)}
+            onConfirm={handleCreateNewClipboard}
+        />
 
         </div>
     );
