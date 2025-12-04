@@ -8,9 +8,9 @@ from datetime import datetime
 
 def create_clipboard(db: Session, user_id: int, name: str):
     clipboard = models.Clipboard(
-    user_id=user_id,
-    name=name,
-    created_at=datetime.utcnow()
+        user_id=user_id,
+        name=name,
+        created_at=datetime.utcnow()
     )
     db.add(clipboard)
     db.commit()

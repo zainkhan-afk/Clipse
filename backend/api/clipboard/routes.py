@@ -43,8 +43,6 @@ def login(request: LoginRequest, db: Session = Depends(auth.get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 
-
-
 # ==========================
 # PROTECTED ROUTE
 # ==========================

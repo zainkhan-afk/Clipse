@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
 from api.clipboard import models
 from api.core.database import SessionLocal
+from api.clipboard.service import create_clipboard
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
@@ -93,6 +94,9 @@ def register_user(db: Session, email: str, password: str, first_name: str, last_
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    clipboard = create_clipboard(db, user_id=new_user.id, name = "main")
+    
     return new_user
 
 def authenticate_user(db: Session, email: str, password: str):

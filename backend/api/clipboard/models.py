@@ -1,7 +1,12 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
 from api.core.database import Base
 from datetime import datetime
+import enum
+
+class ContentType(enum.Enum):
+    text = "text"
+    image = "image"
 
 class User(Base):
     __tablename__ = "users"
@@ -25,6 +30,7 @@ class Clipboard(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    persistance = Column(Integer, nullable=True)
 
     user = relationship("User", back_populates="clipboards")
     data = relationship("ClipboardData", back_populates="clipboard")
@@ -46,6 +52,7 @@ class ClipboardData(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     clipboard_id = Column(Integer, ForeignKey("clipboards.id"), nullable=False)
+    content_type = Column(Enum(ContentType, name="content_type_enum"), nullable=False)
     content = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
