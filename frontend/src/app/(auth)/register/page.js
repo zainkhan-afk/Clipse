@@ -16,6 +16,9 @@ export default function Register() {
         try {
             const data  = await register(registrationData);
             console.log("Registered successfully:", data);
+            if (data.access_token) {
+                router.push("/dashboard");
+            }
         }
         catch (err) {
             console.error("Registration failed:", err.message);

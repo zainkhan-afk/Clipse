@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react";
-import {Computer, ClipboardListIcon, Clipboard, Home, User, Plus, Minus} from "lucide-react";
+import { useRouter } from "next/navigation";
+import {Computer, ClipboardListIcon, Clipboard, Home, User, Plus, Minus, Settings, LogOut, ChevronDown, ChevronRight} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-
 import CreateNewClipboardModal from "./modals/CreateNewClipboard";
+import TooltipWrapper from "./primitives/TooltipWrapper";
+import { logout } from "@/api/auth";
 
 const navItems = [
         { 
@@ -33,8 +35,10 @@ const navItems = [
 
 
 export default function Sidebar() {
+    const router = useRouter();
     const [navigationItems, setNavigationItems] = useState(navItems);
     const [createNewClipboardModalOpen, setCreateNewClipboardModalOpen] = useState(false);
+    const [userSettingsOpen, setUserSettingsOpen] = useState(false);
     const [clipboards, setClipboards] = useState([
                                                     { name: "Common"},
                                                     { name: "Devices"},
@@ -56,6 +60,17 @@ export default function Sidebar() {
         // API call here to create the new clipboard
 
         setCreateNewClipboardModalOpen(false);
+    }
+
+    const handleLogout = async () => {
+        try{
+            console.log("Logging out now");
+            await logout();
+            router.push("/login");
+        }
+        catch(err){
+            console.error("Could not logout", err);
+        }
     }
 
     return (
@@ -89,9 +104,15 @@ export default function Sidebar() {
                                 // href={href}
                                 // className=""
                             >
-                                <div className="flex items-center gap-3 px-4 py-0 hover:bg-gray-800 transition-colors">
+                                <div className="flex items-center gap-1 px-4 py-0 hover:bg-gray-800 transition-colors">
                                     {/* Fixed-size icon so it never shrinks */}
-                                    <Icon className="w-5 h-5 flex-shrink-0" />
+                                    {isOpen ? (
+                                        <ChevronDown className="w-5 h-5 flex-shrink-0 cursor-pointer" onClick={() => toggle(name)}/>
+                                    ) : (
+                                        <ChevronRight className="w-5 h-5 flex-shrink-0 cursor-pointer" onClick={() => toggle(name)} />
+                                    )}
+                                    
+                                    <Icon className="w-5 h-5 ml-3 flex-shrink-0" />
 
                                     {/* Smooth text appearance */}
                                     <span
@@ -99,12 +120,12 @@ export default function Sidebar() {
                                         >
                                         {name}
                                     </span>
-
-                                    {isOpen ? (
-                                        <Minus className="w-5 h-5 flex-shrink-0 cursor-pointer" onClick={() => toggle(name)}/>
-                                    ) : (
-                                        <Plus className="w-5 h-5 flex-shrink-0 cursor-pointer" onClick={() => toggle(name)} />
-                                    )}
+                                    <TooltipWrapper 
+                                        label = "Add new Clipboard"
+                                    >
+                                        <Plus className="w-5 h-5 flex-shrink-0 cursor-pointer" onClick={() => setCreateNewClipboardModalOpen(true)}/>
+                                    </TooltipWrapper>
+                                    
                                 </div>
                                 <div className="flex flex-col">
                                     {/* Extra content only shown when open */}
@@ -137,16 +158,38 @@ export default function Sidebar() {
 
                 </nav>
             </div>
-
             
-            {/* Bottom section - Avatar */}
-            <div className="px-4 py-3 hover:bg-gray-800 cursor-pointer flex items-center gap-3">
+            <div className="relative inline-block">
+            {/* Profile button */}
+            <div
+                className="px-4 py-3 hover:bg-gray-800 cursor-pointer flex items-center gap-3"
+                onClick={() => setUserSettingsOpen(!userSettingsOpen)}
+            >
                 <User className="w-8 h-8 rounded-full bg-gray-700 p-1 flex-shrink-0" />
-                <span
-                    className="overflow-hidden whitespace-nowrap"
-                >
-                Profile
-                </span>
+                <span className="overflow-hidden whitespace-nowrap">Profile</span>
+            </div>
+
+            {/* Dropdown menu */}
+            {userSettingsOpen && (
+                <div className="text-sm absolute right-0 bottom-full mb-2 w-48 bg-gray-600 text-white rounded-lg shadow-lg p-4">
+                <span className="font-extrabold">User Settings</span>
+                <hr className="my-2 border-gray-400" />
+                <div className="mt-2">
+                    <div className="flex gap-2 items-center w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
+                        <Settings className="w-4 h-4"/>
+                        <span>Settings</span>
+                    </div>
+                    <hr className="my-1 border-gray-400" />
+                    <div 
+                        className="flex gap-2 items-center w-full text-left px-2 py-1 hover:bg-gray-700 rounded"
+                        onClick={handleLogout}
+                    >
+                        <LogOut className="w-4 h-4"/>
+                        <span>Logout</span>
+                    </div>
+                </div>
+                </div>
+            )}
             </div>
 
 
