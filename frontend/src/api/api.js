@@ -1,4 +1,6 @@
 // api.js
+import Cookies from "js-cookie";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; // your backend URL
 
 // Helper to get token from localStorage

@@ -1,5 +1,6 @@
 // auth.js
 import { apiFetch } from "./api";
+import Cookies from "js-cookie";
 
 // Login function
 export const login = async (userData) => {
@@ -8,9 +9,14 @@ export const login = async (userData) => {
     body: userData,
   });
 
-  // Save token to localStorage
-  localStorage.setItem("token", data.access_token);
-
+  if (data?.access_token){
+    // Save token for middleware to read
+      Cookies.set("token", data.access_token, {
+        expires: 7,
+        path: "/", // required to make cookie available everywhere
+      });
+  }
+  
   return data;
 };
 
@@ -23,8 +29,11 @@ export const register = async (userData) => {
   });
 
   // Optional: automatically log in after registration
-  if (data.access_token) {
-    localStorage.setItem("token", data.access_token);
+  if (data?.access_token) {
+      Cookies.set("token", data.access_token, {
+          expires: 7,
+          path: "/", // required to make cookie available everywhere
+        });
   }
 
   return data;
@@ -32,7 +41,7 @@ export const register = async (userData) => {
 
 // Logout function
 export const logout = () => {
-  localStorage.removeItem("token");
+  Cookies.remove("token", { path: "/" });
 };
 
 // Example: get user profile

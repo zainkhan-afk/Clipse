@@ -4,15 +4,18 @@ import { useRouter } from "next/navigation";
 import { login } from "@/api/auth";
 
 export default function Login() {
+    const router = useRouter();
     const [loginData, setLoginData] = useState({
             email: "",
             password: ""
         });
-    const router = useRouter();
 
     async function handleLogin() {
         try{
             const data = await login(loginData)
+            if (data.access_token) {
+                router.push("/dashboard");
+            }
         } catch (err) {
             console.error("Registration failed:", err.message);
         }
