@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {Computer, ClipboardListIcon, Clipboard, Home, User, Plus, Minus, Settings, LogOut, ChevronDown, ChevronRight} from "lucide-react";
 import Link from "next/link";
@@ -39,7 +39,7 @@ const navItems = [
 export default function Sidebar() {
     const router = useRouter();
     const { userData, loading: userLoading } = useUser();
-    const { clipboardData, loading: clipboardsLoading } = useClipboards();
+    const { ClipboardsData, loading: clipboardsLoading } = useClipboards();
     
     const [navigationItems, setNavigationItems] = useState(navItems);
     const [createNewClipboardModalOpen, setCreateNewClipboardModalOpen] = useState(false);
@@ -48,6 +48,20 @@ export default function Sidebar() {
                                                     { name: "Common"},
                                                     { name: "Devices"},
                                                 ]);
+    
+    
+    useEffect(() => {
+        if (!clipboardsLoading) {
+            setNavigationItems(prev => prev.map(item => 
+            item.name === "Clipboards"
+                ? { ...item, children: ClipboardsData.map(c => ({ id: c.id, name: c.name })) }
+                : item
+            ));
+        }
+        }, [ClipboardsData, clipboardsLoading]
+    );
+
+
 
     const toggle = (name) => {
         setNavigationItems(prev =>
