@@ -20,3 +20,9 @@ class MeResponse(BaseModel):
     first_name: str
     last_name: str
     is_verified: bool
+    
+
+class ClipboardsResponse(BaseModel):
+    id: int
+    name: str
+    persistance: int|None

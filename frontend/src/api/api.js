@@ -4,7 +4,7 @@ import Cookies from "js-cookie";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; // your backend URL
 
 // Helper to get token from localStorage
-const getToken = () => localStorage.getItem("token");
+const getToken = () => Cookies.get("token", {path: "/"});
 
 // Generic fetch function
 export const apiFetch = async (endpoint, { method = "GET", body, headers = {} } = {}) => {

@@ -8,6 +8,8 @@ import Image from "next/image";
 import CreateNewClipboardModal from "./modals/CreateNewClipboard";
 import TooltipWrapper from "./primitives/TooltipWrapper";
 import { logout } from "@/api/auth";
+import { useUser } from "@/context/UserContext";
+import { useClipboards } from "@/context/ClipboardContext";
 
 const navItems = [
         { 
@@ -36,6 +38,9 @@ const navItems = [
 
 export default function Sidebar() {
     const router = useRouter();
+    const { userData, loading: userLoading } = useUser();
+    const { clipboardData, loading: clipboardsLoading } = useClipboards();
+    
     const [navigationItems, setNavigationItems] = useState(navItems);
     const [createNewClipboardModalOpen, setCreateNewClipboardModalOpen] = useState(false);
     const [userSettingsOpen, setUserSettingsOpen] = useState(false);

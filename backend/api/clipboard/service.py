@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from api.clipboard import models, auth
 from datetime import datetime
 
+from api.clipboard.schemas import ClipboardsResponse
+
 # ----------------------------
 # CREATE CLIPBOARD
 # ----------------------------
@@ -16,6 +18,14 @@ def create_clipboard(db: Session, user_id: int, name: str):
     db.commit()
     db.refresh(clipboard)
     return clipboard
+
+
+def get_clipboards(db: Session, user_id: int):
+    all_clipboards = db.query(models.Clipboard).filter(
+        models.Clipboard.user_id == user_id
+    ).all()
+
+    return [ClipboardsResponse(**clipboard.to_dict()) for clipboard in all_clipboards]
 
 # ----------------------------
 # ADD DEVICE TO USER ACCOUNT

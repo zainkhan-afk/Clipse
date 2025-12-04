@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from api.clipboard import auth
-from api.clipboard.schemas import RegisterRequest, LoginRequest
+from api.clipboard.schemas import RegisterRequest, LoginRequest, MeResponse, ClipboardsResponse
+
+from api.clipboard.service import get_clipboards
 
 router = APIRouter()
 
@@ -46,10 +48,22 @@ def login(request: LoginRequest, db: Session = Depends(auth.get_db)):
 # ==========================
 # PROTECTED ROUTE
 # ==========================
-@router.get("/auth/me")
+@router.get("/auth/me", response_model=MeResponse)
 def me(current_user=Depends(auth.get_current_user)):
+    return MeResponse(id=current_user.id, 
+                      email=current_user.email, 
+                      first_name=current_user.first_name,
+                      last_name=current_user.last_name,
+                      is_verified=current_user.is_verified
+                      )
     return {
         "id": current_user.id,
         "email": current_user.email,
         "is_verified": current_user.is_verified
     }
+
+
+@router.get("/clipboards", response_model=list[ClipboardsResponse])
+def clipboards(current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    all_clipboards = get_clipboards(db, current_user.id)
+    return all_clipboards

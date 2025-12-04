@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import { UserProvider } from "@/context/UserContext";
+import { ClipboardsProvider } from "@/context/ClipboardContext";
 
 import "../globals.css";
 
@@ -23,10 +25,14 @@ export default function RootLayout({ children }) {
   return (
     <div className="flex min-h-screen w-full">
         {/* <Navbar/> */}
-        <Sidebar/>
-        <div className="flex-1 w-full ml-64 px-2 bg-gray-600 bg-opacity-80 rounded-lg shadow-lg">
-            {children}
-        </div>
+        <UserProvider>
+        <ClipboardsProvider>
+          <Sidebar/>
+          <div className="flex-1 w-full ml-64 px-2 bg-gray-600 bg-opacity-80 rounded-lg shadow-lg">
+              {children}
+          </div>
+        </ClipboardsProvider>
+        </UserProvider>
     </div>
   );
 }

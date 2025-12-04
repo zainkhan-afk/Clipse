@@ -36,6 +36,14 @@ class Clipboard(Base):
     data = relationship("ClipboardData", back_populates="clipboard")
 
 
+    def to_dict(self):
+        return {
+            "id" : self.id,
+            "name" : self.name,
+            "persistance" : self.persistance
+        }
+
+
 class Device(Base):
     __tablename__ = "devices"
 
