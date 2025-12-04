@@ -50,12 +50,17 @@ def login(request: LoginRequest, db: Session = Depends(auth.get_db)):
 # ==========================
 @router.get("/auth/me", response_model=MeResponse)
 def me(current_user=Depends(auth.get_current_user)):
-    return MeResponse(id=current_user.id, 
-                      email=current_user.email, 
-                      first_name=current_user.first_name,
-                      last_name=current_user.last_name,
-                      is_verified=current_user.is_verified
+    user_data = MeResponse(
+                        id=current_user.id, 
+                        email=current_user.email, 
+                        first_name=current_user.first_name,
+                        last_name=current_user.last_name,
+                        is_verified=current_user.is_verified
                       )
+    
+    print(user_data)
+    return user_data
+    
     return {
         "id": current_user.id,
         "email": current_user.email,

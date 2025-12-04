@@ -38,9 +38,10 @@ const navItems = [
 
 export default function Sidebar() {
     const router = useRouter();
-    const { userData, loading: userLoading } = useUser();
+    const { UserData, loading: userLoading } = useUser();
     const { ClipboardsData, loading: clipboardsLoading } = useClipboards();
     
+    const [userInfo, setUserInfo] = useState({});
     const [navigationItems, setNavigationItems] = useState(navItems);
     const [createNewClipboardModalOpen, setCreateNewClipboardModalOpen] = useState(false);
     const [userSettingsOpen, setUserSettingsOpen] = useState(false);
@@ -59,6 +60,14 @@ export default function Sidebar() {
             ));
         }
         }, [ClipboardsData, clipboardsLoading]
+    );
+
+
+    useEffect(() => {
+        if (!userLoading) {
+            setUserInfo(UserData);
+        }
+        }, [UserData, userLoading]
     );
 
 
@@ -185,7 +194,9 @@ export default function Sidebar() {
                 onClick={() => setUserSettingsOpen(!userSettingsOpen)}
             >
                 <User className="w-8 h-8 rounded-full bg-gray-700 p-1 flex-shrink-0" />
-                <span className="overflow-hidden whitespace-nowrap">Profile</span>
+                <span className="overflow-hidden whitespace-nowrap">
+                    {userInfo?.first_name}
+                </span>
             </div>
 
             {/* Dropdown menu */}
