@@ -84,7 +84,19 @@ export default function ClipboardPage() {
 
 
   return (
-  <div className="h-full flex flex-col p-8 text-gray-800">
+  <div 
+    tabIndex={0}
+    className="h-full flex flex-col p-8 text-gray-800"
+    onPaste={(e) => {
+    e.preventDefault();
+
+    const pastedText = e.clipboardData.getData("text");
+
+    if (!pastedText.trim()) return;
+
+    handleSendToClipboard(pastedText);
+  }}
+  >
     <div className="flex flex-col">
         <h1>Clipboard</h1>
         <h2>{clipboardData?.clipboard?.name}</h2>
@@ -96,9 +108,18 @@ export default function ClipboardPage() {
         {/* Input section */}
         <div className="flex flex-col bg-gray-300 bg-opacity-10 rounded-lg shadow-lg p-4">
             <textarea 
-            className="h-30 border border-black rounded-lg p-2"
-            value={textToSend}
-            onChange={(e) => setTextToSend(e.target.value)}
+                className="h-30 border border-black rounded-lg p-2"
+                value={textToSend}
+                onChange={(e) => setTextToSend(e.target.value)}
+                onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                    e.preventDefault(); // prevent newline
+                    handleSendToClipboard(textToSend);
+                    }
+                }}
+                onPaste={(e) => {
+                    e.stopPropagation();
+                }}
             />
 
             <div className="flex justify-end items-center mt-2 gap-2">
@@ -118,7 +139,6 @@ export default function ClipboardPage() {
         </div>
 
         {/* SCROLL AREA */}
-        {/* <div className="flex-1 border border-red-500 flex-1 flex flex-col overflow-y-auto pr-2 gap-3"> */}
         <div className="flex-1 overflow-y-auto min-h-0 p-3 bg-gray-700 bg-opacity-10 rounded-lg shadow-lg">
             {clipboardData?.clipboard_data?.map((message) => (
             <div
