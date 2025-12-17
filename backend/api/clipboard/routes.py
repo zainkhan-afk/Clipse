@@ -1,9 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from api.clipboard import auth
-from api.clipboard.schemas import RegisterRequest, LoginRequest, MeResponse, ClipboardsResponse
+from api.clipboard.schemas import RegisterRequest, LoginRequest\
+                                , MeResponse, ClipboardsResponse\
+                                , CurrentClipboardData, ClipboardAddMessageRequest\
+                                
 
-from api.clipboard.service import get_clipboards
+from api.clipboard.service import get_clipboards \
+                                , get_all_current_clipboard_data \
+                                , add_clipboard_data
 
 router = APIRouter()
 
@@ -72,3 +77,20 @@ def me(current_user=Depends(auth.get_current_user)):
 def clipboards(current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     all_clipboards = get_clipboards(db, current_user.id)
     return all_clipboards
+
+
+@router.get("/clipboards/{slug}", response_model = CurrentClipboardData)
+def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    all_clipboard_data = get_all_current_clipboard_data(db, user_id=current_user.id, clipboard_id=slug)
+    return all_clipboard_data
+
+
+@router.post("/clipboards/{slug}")
+def add_clipboard_message(slug:int, request: ClipboardAddMessageRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    
+    new_message = add_clipboard_data(db, clipboard_id=slug, message = request)
+
+    if not new_message:
+        raise HTTPException(status_code=401, detail="Unable to add new message")
+    
+    return new_message

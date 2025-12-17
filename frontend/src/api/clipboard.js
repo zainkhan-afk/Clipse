@@ -20,3 +20,17 @@ export const deleteClipboard = async (id) => {
     method: "DELETE",
   });
 };
+
+
+
+// Fetch all clipboard data
+export const getClipboardData = async (clipboard_id) => {
+  return await apiFetch(`/clipboards/${clipboard_id}`);
+};
+
+
+
+// Send message to clipboard
+export const sendToClipboard = async (message_data, clipboard_id) => {
+  return await apiFetch(`/clipboards/${clipboard_id}`, {method: "POST", body: message_data})
+}

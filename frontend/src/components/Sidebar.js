@@ -103,9 +103,9 @@ export default function Sidebar() {
 
     return (
         <div
-            className="bg-gray-900 text-white h-full pt-1 pb-[40px] fixed left-0 top-0 z-40 w-64 flex flex-col justify-between" /* Keep min width enough for icons */
+            className="bg-gray-900 h-full text-white pt-1 pb-[40px] w-64 flex flex-col justify-between" /* Keep min width enough for icons */
         >
-            <div>
+            <div className="felx flex-col h-full">
                 {/* Navigation */}
                 <nav className="mt-4">
                     <Link
@@ -187,40 +187,41 @@ export default function Sidebar() {
                 </nav>
             </div>
             
-            <div className="relative inline-block">
-            {/* Profile button */}
-            <div
-                className="px-4 py-3 hover:bg-gray-800 cursor-pointer flex items-center gap-3"
-                onClick={() => setUserSettingsOpen(!userSettingsOpen)}
-            >
-                <User className="w-8 h-8 rounded-full bg-gray-700 p-1 flex-shrink-0" />
-                <span className="overflow-hidden whitespace-nowrap">
-                    {userInfo?.first_name}
-                </span>
-            </div>
+            <div className="relative flex flex-col">
+    {/* Profile button */}
+    <div
+        className="flex px-4 py-3 hover:bg-gray-800 cursor-pointer items-center gap-3"
+        onClick={() => setUserSettingsOpen(!userSettingsOpen)}
+    >
+        <User className="w-8 h-8 rounded-full bg-gray-700 p-1 flex-shrink-0" />
+        <span className="overflow-hidden whitespace-nowrap">
+            {userInfo?.first_name}
+        </span>
+    </div>
 
-            {/* Dropdown menu */}
-            {userSettingsOpen && (
-                <div className="text-sm absolute right-0 bottom-full mb-2 w-48 bg-gray-600 text-white rounded-lg shadow-lg p-4">
-                <span className="font-extrabold">User Settings</span>
-                <hr className="my-2 border-gray-400" />
-                <div className="mt-2">
-                    <div className="flex gap-2 items-center w-full text-left px-2 py-1 hover:bg-gray-700 rounded">
-                        <Settings className="w-4 h-4"/>
-                        <span>Settings</span>
-                    </div>
-                    <hr className="my-1 border-gray-400" />
-                    <div 
-                        className="flex gap-2 items-center w-full text-left px-2 py-1 hover:bg-gray-700 rounded"
-                        onClick={handleLogout}
-                    >
-                        <LogOut className="w-4 h-4"/>
-                        <span>Logout</span>
-                    </div>
+    {/* Dropdown menu */}
+    {userSettingsOpen && (
+        <div className="absolute left-0 bottom-full mb-2 w-48 bg-gray-600 text-white rounded-lg shadow-lg p-4 text-sm">
+            <span className="font-extrabold">User Settings</span>
+            <hr className="my-2 border-gray-400" />
+            <div className="mt-2">
+                <div className="flex gap-2 items-center px-2 py-1 hover:bg-gray-700 rounded">
+                    <Settings className="w-4 h-4"/>
+                    <span>Settings</span>
                 </div>
+                <hr className="my-1 border-gray-400" />
+                <div
+                    className="flex gap-2 items-center px-2 py-1 hover:bg-gray-700 rounded"
+                    onClick={handleLogout}
+                >
+                    <LogOut className="w-4 h-4"/>
+                    <span>Logout</span>
                 </div>
-            )}
             </div>
+        </div>
+    )}
+</div>
+
 
 
         <CreateNewClipboardModal 

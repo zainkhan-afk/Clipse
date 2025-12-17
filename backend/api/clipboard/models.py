@@ -65,3 +65,12 @@ class ClipboardData(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     clipboard = relationship("Clipboard", back_populates="data")
+
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "content_type" : self.content_type,
+            "content" : self.content,
+            "created_at" : self.created_at,
+        }

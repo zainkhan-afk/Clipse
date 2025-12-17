@@ -19,8 +19,8 @@ export const ClipboardsProvider = ({ children }) => {
   useEffect(() => {
     fetchData();
 
-    const interval = setInterval(fetchData, 10000); // refresh every 10 seconds
-    return () => clearInterval(interval);
+    // const interval = setInterval(fetchData, 10000); // refresh every 10 seconds
+    // return () => clearInterval(interval);
   }, []);
 
   return (

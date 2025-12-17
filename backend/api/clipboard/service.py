@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session
 from api.clipboard import models, auth
 from datetime import datetime
 
-from api.clipboard.schemas import ClipboardsResponse
+from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
+                                , CurrentClipboardData, ClipboardAddMessageRequest
 
 # ----------------------------
 # CREATE CLIPBOARD
@@ -46,20 +47,46 @@ def add_device(db: Session, user_id: int, device_name: str):
 # GET ALL CLIPBOARD DATA
 # ----------------------------
 
-def get_clipboard_data(db: Session, user_id: int):
-    return db.query(models.ClipboardData).join(models.Clipboard).filter(
-    models.Clipboard.user_id == user_id
-    ).all()
+def get_all_current_clipboard_data(db: Session, user_id: int, clipboard_id: int):
+    current_clipboard = db.query(models.Clipboard).filter(
+            models.Clipboard.user_id == user_id,
+            models.Clipboard.id == clipboard_id,
+        ).first()
+    
+    current_clipboard = ClipboardsResponse(**current_clipboard.to_dict())
+    
+    current_clipboard_data = db.query(models.ClipboardData).join(models.Clipboard).filter(
+            models.Clipboard.user_id == user_id,
+            models.Clipboard.id == clipboard_id,
+        ).order_by(models.ClipboardData.created_at.desc()).all()
+    
+    current_clipboard_data = [ClipboardData(**cp_data.to_dict()) for cp_data in current_clipboard_data]
+
+    return CurrentClipboardData(clipboard = current_clipboard, clipboard_data=current_clipboard_data)
+
+def get_clipboard_data(db: Session, user_id: int, clipboard_id: int):
+    all_clipboard_data = db.query(models.ClipboardData).join(models.Clipboard).filter(
+            models.Clipboard.user_id == user_id,
+            models.Clipboard.id == clipboard_id,
+        ).all()
+    
+    # all_clipboard_data = db.query(models.Clipboard).filter(
+    #         models.Clipboard.user_id == user_id,
+    #         models.Clipboard.id == clipboard_id,
+    #     ).all()
+    
+    return all_clipboard_data
 
 # ----------------------------
 # ADD DATA TO CLIPBOARD
 # ----------------------------
 
-def add_clipboard_data(db: Session, clipboard_id: int, content: str):
+def add_clipboard_data(db: Session, clipboard_id: int, message: ClipboardAddMessageRequest):
     data = models.ClipboardData(
-    clipboard_id=clipboard_id,
-    content=content,
-    created_at=datetime.utcnow()
+        clipboard_id=clipboard_id,
+        content=message.content,
+        content_type = message.content_type,
+        created_at=datetime.utcnow()
     )
     db.add(data)
     db.commit()

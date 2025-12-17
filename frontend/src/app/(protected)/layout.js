@@ -23,13 +23,18 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex h-screen w-full bg-blue-900">
         {/* <Navbar/> */}
         <UserProvider>
         <ClipboardsProvider>
-          <Sidebar/>
-          <div className="flex-1 w-full ml-64 px-2 bg-gray-600 bg-opacity-80 rounded-lg shadow-lg">
-              {children}
+          <div className="flex flex-row w-full">
+            <div className="flex flex-col bg-green-300">
+              <Sidebar/>
+            </div>
+            {/* <div className="flex-1 w-full ml-64 px-2 bg-gray-600 bg-opacity-80 rounded-lg shadow-lg"> */}
+            <div className="w-full flex-col px-2 bg-gray-600 bg-opacity-80 rounded-lg shadow-lg">
+                {children}
+            </div>
           </div>
         </ClipboardsProvider>
         </UserProvider>
