@@ -27,6 +27,15 @@ export default function ClipboardPage() {
         // ],
     });
 
+    const formatter = new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+
 
 
     useEffect(() => {
@@ -145,20 +154,22 @@ export default function ClipboardPage() {
                 key={message.id}
                 className="flex flex-col bg-gray-400 rounded-lg mt-2 p-2"
             >
-                <p>{message.content}</p>
+                <p className="whitespace-pre-wrap">
+                    {message.content}
+                </p>
 
                 <div className="flex items-center justify-between px-2">
-                <span>{message.created_at.toString()}</span>
+                    <span className="text-sm text-gray-700">{formatter.format(new Date(message.created_at))}</span>
 
-                <div className="flex gap-2">
-                    <TooltipWrapper label="Copy">
-                    <InteractiveIcon icon={Copy} onClick={() => handleCopy(message.data)} />
-                    </TooltipWrapper>
+                    <div className="flex gap-2">
+                        <TooltipWrapper label="Copy">
+                        <InteractiveIcon icon={Copy} onClick={() => {console.log(typeof(message)); handleCopy(message.content)}} />
+                        </TooltipWrapper>
 
-                    <TooltipWrapper label="Delete">
-                    <InteractiveIcon icon={Trash} onClick={() => handleOpenMessageDeleteModal(message)} />
-                    </TooltipWrapper>
-                </div>
+                        <TooltipWrapper label="Delete">
+                        <InteractiveIcon icon={Trash} onClick={() => handleOpenMessageDeleteModal(message)} />
+                        </TooltipWrapper>
+                    </div>
                 </div>
             </div>
             ))}
