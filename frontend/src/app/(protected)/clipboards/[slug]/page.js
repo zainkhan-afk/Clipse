@@ -110,10 +110,30 @@ export default function ClipboardPage() {
         }
     }
 
-    const handleCopy = (text) => {
+    const handleCopyText = (text) => {
         navigator.clipboard.writeText(text).then(() => {
             console.log("Copied:", text);
         });
+    };
+
+    const handleCopyImage = async (imageUrl) => {
+        try {
+            // Fetch image
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${imageUrl}`, { credentials: "include" });
+            const blob = await response.blob();
+
+            // Create clipboard item
+            const clipboardItem = new ClipboardItem({
+            [blob.type]: blob,
+            });
+
+            // Write to clipboard
+            await navigator.clipboard.write([clipboardItem]);
+
+            console.log("Image copied to clipboard");
+        } catch (err) {
+            console.error("Failed to copy image:", err);
+        }
     };
 
     const handleOpenMessageDeleteModal = (message) => {
@@ -204,7 +224,7 @@ export default function ClipboardPage() {
 
                     <div className="flex gap-2">
                         <TooltipWrapper label="Copy">
-                        <InteractiveIcon icon={Copy} onClick={() => {console.log(typeof(message)); handleCopy(message.content)}} />
+                        <InteractiveIcon icon={Copy} onClick={() => {message.content_type == "text" ? handleCopyText(message.content) : handleCopyImage(message.content)}} />
                         </TooltipWrapper>
 
                         <TooltipWrapper label="Delete">
