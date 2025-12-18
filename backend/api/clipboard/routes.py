@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from sqlalchemy.orm import Session
 from api.clipboard import auth
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
@@ -8,7 +8,8 @@ from api.clipboard.schemas import RegisterRequest, LoginRequest\
 
 from api.clipboard.service import get_clipboards \
                                 , get_all_current_clipboard_data \
-                                , add_clipboard_data
+                                , add_clipboard_data_text \
+                                , add_clipboard_data_image
 
 router = APIRouter()
 
@@ -85,12 +86,49 @@ def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Se
     return all_clipboard_data
 
 
-@router.post("/clipboards/{slug}")
-def add_clipboard_message(slug:int, request: ClipboardAddMessageRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+# @router.post("/clipboards/{slug}")
+# def add_clipboard_message(slug:int, request: ClipboardAddMessageRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     
-    new_message = add_clipboard_data(db, clipboard_id=slug, message = request)
+#     new_message = add_clipboard_data(db, clipboard_id=slug, message = request)
 
-    if not new_message:
-        raise HTTPException(status_code=401, detail="Unable to add new message")
+#     if not new_message:
+#         raise HTTPException(status_code=401, detail="Unable to add new message")
     
-    return new_message
+#     return new_message
+
+
+
+@router.post("/clipboards/{slug}")
+def add_clipboard_message(slug: int,
+        content_type: str = Form(...),
+        content: str | None = Form(None),
+        image: UploadFile | None = File(None),
+        current_user = Depends(auth.get_current_user),
+        db: Session = Depends(auth.get_db)
+    ):
+
+    if content_type == "text":
+        if not content:
+            raise HTTPException(400, "Text content is required")
+        
+        content_message = ClipboardAddMessageRequest(content_type=content_type, content=content)
+
+        new_message = add_clipboard_data_text(
+            db,
+            clipboard_id=slug,
+            message = content_message
+        )
+
+    elif content_type == "image":
+        if not image:
+            raise HTTPException(400, "Image file is required")
+
+        new_message = add_clipboard_data_image(
+            db,
+            clipboard_id=slug,
+            image=image,
+        )
+
+
+    else:
+        raise HTTPException(400, "Invalid content type")

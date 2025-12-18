@@ -31,6 +31,9 @@ export const getClipboardData = async (clipboard_id) => {
 
 
 // Send message to clipboard
-export const sendToClipboard = async (message_data, clipboard_id) => {
-  return await apiFetch(`/clipboards/${clipboard_id}`, {method: "POST", body: message_data})
-}
+export const sendToClipboard = async (messageData, clipboardId) => {
+  return apiFetch(`/clipboards/${clipboardId}`, {
+    method: "POST",
+    body: messageData,
+  });
+};

@@ -51,22 +51,61 @@ export default function ClipboardPage() {
     }, [slug, refreshMessages]
     );
 
-    const handleSendToClipboard = async (text) => {
-        if (text){
-            console.log("Sending `", text,"` to clipboard")
-            // Add API call here
-            try{
-                const message = {
-                    content_type: "text",
-                    content: text,
-                    created_at: new Date()
+    const handleSendTextToClipboard = async (text) => {
+        if (!text) return;
+
+        try {
+            const formData = new FormData();
+            formData.append("content_type", "text");
+            formData.append("content", text);
+
+            await sendToClipboard(formData, slug);
+
+            setTextToSend("");
+            setRefreshMessages(true);
+        } catch (err) {
+            console.error("Failed to send message to clipboard", err);
+        }
+    };
+
+
+
+    const handleSendImageToClipboard = async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append("content_type", "image");
+            formData.append("image", file);
+            // formData.append("created_at", new Date());
+
+            await sendToClipboard(formData, slug);
+            setRefreshMessages(true);
+        } catch (err) {
+            console.error("Failed to send image", err);
+        }
+    };
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+
+        const items = e.clipboardData.items;
+
+        for (const item of items) {
+            // IMAGE
+            if (item.kind === "file" && item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            console.log("Sending File");
+            handleSendImageToClipboard(file);
+            return;
+            }
+
+            // TEXT
+            if (item.kind === "string" && item.type === "text/plain") {
+            item.getAsString((text) => {
+                if (text.trim()) {
+                    handleSendTextToClipboard(text);
                 }
-                
-                const data = await sendToClipboard(message, slug)
-                setTextToSend("");
-                setRefreshMessages(true);
-            }catch(err) {
-                console.error("Failed to send message to clipboard", err);
+            });
+            return;
             }
         }
     }
@@ -96,15 +135,7 @@ export default function ClipboardPage() {
   <div 
     tabIndex={0}
     className="h-full flex flex-col p-8 text-gray-800"
-    onPaste={(e) => {
-    e.preventDefault();
-
-    const pastedText = e.clipboardData.getData("text");
-
-    if (!pastedText.trim()) return;
-
-    handleSendToClipboard(pastedText);
-  }}
+    onPaste={(e) => handlePaste(e)}
   >
     <div className="flex flex-col">
         <h1>Clipboard</h1>
@@ -122,8 +153,8 @@ export default function ClipboardPage() {
                 onChange={(e) => setTextToSend(e.target.value)}
                 onKeyDown={(e) => {
                     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                    e.preventDefault(); // prevent newline
-                    handleSendToClipboard(textToSend);
+                        e.preventDefault(); // prevent newline
+                        handleSendTextToClipboard(textToSend);
                     }
                 }}
                 onPaste={(e) => {
@@ -139,7 +170,7 @@ export default function ClipboardPage() {
             <TooltipWrapper label="Send to Clipboard">
                 <button 
                 className="rounded-lg bg-blue-300 px-4 py-1"
-                onClick={() => handleSendToClipboard(textToSend)}
+                onClick={() => handleSendTextToClipboard(textToSend)}
                 >
                 Send
                 </button>
@@ -154,9 +185,19 @@ export default function ClipboardPage() {
                 key={message.id}
                 className="flex flex-col bg-gray-400 rounded-lg mt-2 p-2"
             >
-                <p className="whitespace-pre-wrap">
-                    {message.content}
-                </p>
+                {message.content_type == "text" && (
+                    <p className="whitespace-pre-wrap">
+                        {message.content}
+                    </p>  
+                )}
+
+                {message.content_type == "image" && (
+                    <img
+                        src={`${process.env.NEXT_PUBLIC_API_URL}/${message.content}`}
+                        alt="Clipboard image"
+                        className="max-w-full rounded-lg"
+                    />
+                )}
 
                 <div className="flex items-center justify-between px-2">
                     <span className="text-sm text-gray-700">{formatter.format(new Date(message.created_at))}</span>

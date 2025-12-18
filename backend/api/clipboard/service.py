@@ -5,6 +5,9 @@ from datetime import datetime
 from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
                                 , CurrentClipboardData, ClipboardAddMessageRequest
 
+import uuid
+import shutil
+
 # ----------------------------
 # CREATE CLIPBOARD
 # ----------------------------
@@ -81,7 +84,7 @@ def get_clipboard_data(db: Session, user_id: int, clipboard_id: int):
 # ADD DATA TO CLIPBOARD
 # ----------------------------
 
-def add_clipboard_data(db: Session, clipboard_id: int, message: ClipboardAddMessageRequest):
+def add_clipboard_data_text(db: Session, clipboard_id: int, message: ClipboardAddMessageRequest):
     data = models.ClipboardData(
         clipboard_id=clipboard_id,
         content=message.content,
@@ -92,3 +95,23 @@ def add_clipboard_data(db: Session, clipboard_id: int, message: ClipboardAddMess
     db.commit()
     db.refresh(data)
     return data
+
+
+def add_clipboard_data_image(db: Session, clipboard_id: int, image: "UploadFile"):
+    filename = f"{uuid.uuid4()}_{image.filename}"
+    path = f"uploads/{filename}"
+
+    with open(path, "wb") as f:
+        shutil.copyfileobj(image.file, f)
+
+    msg = models.ClipboardData(
+        clipboard_id=clipboard_id,
+        content=path,
+        content_type="image",
+        created_at=datetime.utcnow()
+    )
+
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+    return msg
