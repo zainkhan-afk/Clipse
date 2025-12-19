@@ -7,6 +7,7 @@ from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
 
 import uuid
 import shutil
+import os
 
 # ----------------------------
 # CREATE CLIPBOARD
@@ -115,3 +116,23 @@ def add_clipboard_data_image(db: Session, clipboard_id: int, image: "UploadFile"
     db.commit()
     db.refresh(msg)
     return msg
+
+
+def delete_message(db: Session, clipboard_id: int, message_id: int):
+    message = db.query(models.ClipboardData).join(models.Clipboard).filter(
+            models.ClipboardData.id == message_id,
+            models.ClipboardData.clipboard_id == clipboard_id,
+        ).first()
+    
+    print("message", message.content, message.content_type)
+    
+    if message:
+        image_path = None
+        if message.content_type == "image":
+            image_path = message.content
+        db.delete(message)
+        db.commit()
+        if image_path:
+            os.remove(image_path)
+            print("Removing ", image_path)
+        return {"detail": "Message deleted successfully"}

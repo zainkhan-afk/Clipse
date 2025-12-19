@@ -3,7 +3,7 @@ import { apiFetch } from "./api";
 
 // Fetch all clipboards
 export const getClipboards = async () => {
-  return await apiFetch("/clipboards");
+  return await apiFetch("/clipboards", {credentials:"include"});
 };
 
 // Create new clipboard
@@ -25,7 +25,7 @@ export const deleteClipboard = async (id) => {
 
 // Fetch all clipboard data
 export const getClipboardData = async (clipboard_id) => {
-  return await apiFetch(`/clipboards/${clipboard_id}`);
+  return await apiFetch(`/clipboards/${clipboard_id}`, {credentials:"include"});
 };
 
 
@@ -35,5 +35,14 @@ export const sendToClipboard = async (messageData, clipboardId) => {
   return apiFetch(`/clipboards/${clipboardId}`, {
     method: "POST",
     body: messageData,
+  });
+};
+
+
+
+// Delete Message
+export const deleteMessage = async (clipboardId, messageId) => {
+  return apiFetch(`/clipboards/${clipboardId}/messages/${messageId}`, {
+    method: "Delete"
   });
 };

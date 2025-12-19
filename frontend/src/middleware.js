@@ -6,7 +6,7 @@ export function middleware(req) {
   const { pathname } = req.nextUrl;
 
   // Protect dashboard/settings
-  if (!token && pathname.startsWith("/dashboard")) {
+  if (!token && (pathname.startsWith("/dashboard") || pathname.startsWith("/clipboards"))) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -19,5 +19,5 @@ export function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/settings/:path*", "/login", "/register"],
+  matcher: ["/dashboard/:path*", "/settings/:path*", "/clipboards/:path*", "/login", "/register"],
 };

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response
 from sqlalchemy.orm import Session
 from api.clipboard import auth
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
@@ -9,7 +9,8 @@ from api.clipboard.schemas import RegisterRequest, LoginRequest\
 from api.clipboard.service import get_clipboards \
                                 , get_all_current_clipboard_data \
                                 , add_clipboard_data_text \
-                                , add_clipboard_data_image
+                                , add_clipboard_data_image \
+                                , delete_message
 
 router = APIRouter()
 
@@ -43,12 +44,45 @@ def verify_email(token: str, db: Session = Depends(auth.get_db)):
     return {"message": "Email verified successfully"}
 
 @router.post("/auth/login")
-def login(request: LoginRequest, db: Session = Depends(auth.get_db)):
+def login(request: LoginRequest, response: Response, db: Session = Depends(auth.get_db)):
     user = auth.authenticate_user(db, request.email, request.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials or email not verified")
     token = auth.create_access_token({"sub": request.email})
+    # Set cookie directly in response
+    response.set_cookie(
+        key="token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=auth.ACCESS_TOKEN_EXPIRE_MINUTES,
+        path="/"
+    )
+    
     return {"access_token": token, "token_type": "bearer"}
+
+@router.post("/auth/refresh")
+def refresh_token(
+    refresh_token: str,
+    db: Session = Depends(auth.get_db)
+):
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
+    payload = auth.verify_refresh_token(refresh_token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+    email = payload.get("sub")
+    user = auth.get_user_by_email(db, email)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    new_access_token = auth.create_access_token({"sub": email})
+
+    return {"access_token": new_access_token}
 
 
 # ==========================
@@ -130,5 +164,21 @@ def add_clipboard_message(slug: int,
         )
 
 
+    else:
+        raise HTTPException(400, "Invalid content type")
+    
+
+@router.delete("/clipboards/{clipboard_id}/messages/{message_id}")
+def delete_clipboard_message(
+        clipboard_id: int,
+        message_id: int,
+        current_user = Depends(auth.get_current_user),
+        db: Session = Depends(auth.get_db),
+    ):
+
+
+    resp = delete_message(db, clipboard_id, message_id)
+    if resp:
+        return {"detail": "Message deleted successfully"}
     else:
         raise HTTPException(400, "Invalid content type")

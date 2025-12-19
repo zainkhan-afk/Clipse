@@ -13,6 +13,8 @@ SECRET_KEY = "CLIPBOARD_SECRET_KEY_SHOULD_BE_LONG"
 EMAIL_VERIFY_SECRET_KEY = "CLIPBOARD_EMAIL_VERIFY_SECRET_KEY_SHOULD_BE_LONG"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+REFRESH_SECRET_KEY = "CLIPBOARD_REFRESH_SECRET_KEY_SHOULD_BE_LONG"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/clipboard/auth/login")
 
@@ -59,6 +61,12 @@ def create_access_token(data: dict, expires_minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def create_refresh_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
 
 def create_email_verification_token(email: str):
     expire = datetime.utcnow() + timedelta(minutes=30)
@@ -108,3 +116,12 @@ def authenticate_user(db: Session, email: str, password: str):
     if not user.is_verified:
         return None
     return user
+
+
+
+def verify_refresh_token(token: str):
+    try:
+        payload = jwt.decode(token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        return None

@@ -7,7 +7,7 @@ import TooltipWrapper from "@/components/primitives/TooltipWrapper";
 import InteractiveIcon from "@/components/primitives/InteractiveIcon";
 import DeleteMessageConfirmationModal from "@/components/modals/DeleteMessage";
 
-import { getClipboardData, sendToClipboard } from "@/api/clipboard";
+import { getClipboardData, sendToClipboard, deleteMessage } from "@/api/clipboard";
 
 export default function ClipboardPage() {
     const params = useParams();
@@ -75,7 +75,6 @@ export default function ClipboardPage() {
             const formData = new FormData();
             formData.append("content_type", "image");
             formData.append("image", file);
-            // formData.append("created_at", new Date());
 
             await sendToClipboard(formData, slug);
             setRefreshMessages(true);
@@ -141,13 +140,25 @@ export default function ClipboardPage() {
         setMessageDeleteModalOpen(true);
     }
 
-    const handleDeleteMessage = () => {
-        if (messageToDelete) {
-            // API call to delete the message
-            console.log("Message deleted", messageToDelete);
+    const handleDeleteMessage = async () => {
+        if (!messageToDelete || !slug) return;
+
+        try {
+            await deleteMessage(slug, messageToDelete.id);
+
+            setClipboardData((prev) => ({
+            ...prev,
+            clipboard_data: prev.clipboard_data.filter(
+                (message) => message.id !== messageToDelete.id
+            ),
+            }));
+
             setMessageToDelete(null);
+            setMessageDeleteModalOpen(false);
+        } catch (err) {
+            console.error("Failed to delete message", err);
+            // Optional: show toast / error message
         }
-        setMessageDeleteModalOpen(false);
     };
 
 
