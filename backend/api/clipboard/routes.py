@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response, Request
 from sqlalchemy.orm import Session
 from api.clipboard import auth
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
@@ -13,6 +13,11 @@ from api.clipboard.service import get_clipboards \
                                 , delete_message
 
 router = APIRouter()
+
+
+@router.get("/")
+def clipboard_root():
+    return {"clipboard-root" : "Working"}
 
 @router.post("/auth/register")
 def register(request: RegisterRequest, db: Session = Depends(auth.get_db)):
@@ -49,7 +54,7 @@ def login(request: LoginRequest, response: Response, db: Session = Depends(auth.
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials or email not verified")
     token = auth.create_access_token({"sub": request.email})
-    # Set cookie directly in response
+    
     response.set_cookie(
         key="token",
         value=token,
@@ -88,6 +93,14 @@ def refresh_token(
 # ==========================
 # PROTECTED ROUTE
 # ==========================
+
+# @router.get("/auth/me")
+# def me(request: Request):
+#     print("request", request)
+#     token = request.cookies.get("token")
+#     print("token", token)
+#     return {"email": "zain@example.com"}
+
 @router.get("/auth/me", response_model=MeResponse)
 def me(current_user=Depends(auth.get_current_user)):
     user_data = MeResponse(

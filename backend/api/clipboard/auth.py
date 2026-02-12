@@ -7,12 +7,13 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer
+from fastapi import Request
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "CLIPBOARD_SECRET_KEY_SHOULD_BE_LONG"
 EMAIL_VERIFY_SECRET_KEY = "CLIPBOARD_EMAIL_VERIFY_SECRET_KEY_SHOULD_BE_LONG"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 360
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 REFRESH_SECRET_KEY = "CLIPBOARD_REFRESH_SECRET_KEY_SHOULD_BE_LONG"
 
@@ -29,23 +30,36 @@ def get_db():
     finally:
         db.close()
 
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    token = request.cookies.get("token")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
+
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid token payload")
+
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(
+        models.User.email == email
+    ).first()
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Email not verified")
-    return user
 
+    return user
 
 
 # Password helpers
