@@ -13,8 +13,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "CLIPBOARD_SECRET_KEY_SHOULD_BE_LONG"
 EMAIL_VERIFY_SECRET_KEY = "CLIPBOARD_EMAIL_VERIFY_SECRET_KEY_SHOULD_BE_LONG"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 360
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+ACCESS_TOKEN_EXPIRE_SECONDS = 60*60
+REFRESH_TOKEN_EXPIRE_SECONDS = 60*60*24*7
 REFRESH_SECRET_KEY = "CLIPBOARD_REFRESH_SECRET_KEY_SHOULD_BE_LONG"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/clipboard/auth/login")
@@ -34,7 +34,7 @@ def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    token = request.cookies.get("token")
+    token = request.cookies.get("access_token")
 
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -70,15 +70,15 @@ def verify_password(password, hashed):
     return pwd_context.verify(password, hashed)
 
 # JWT helpers
-def create_access_token(data: dict, expires_minutes=ACCESS_TOKEN_EXPIRE_MINUTES):
+def create_access_token(data: dict, expires_seconds=ACCESS_TOKEN_EXPIRE_SECONDS):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
+    expire = datetime.utcnow() + timedelta(seconds=expires_seconds)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def create_refresh_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    expire = datetime.utcnow() + timedelta(seconds=REFRESH_TOKEN_EXPIRE_SECONDS)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
 

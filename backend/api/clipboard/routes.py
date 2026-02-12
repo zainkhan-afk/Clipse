@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response, Request
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response, Request, Cookie
 from sqlalchemy.orm import Session
 from api.clipboard import auth
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
@@ -54,14 +54,25 @@ def login(request: LoginRequest, response: Response, db: Session = Depends(auth.
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials or email not verified")
     token = auth.create_access_token({"sub": request.email})
+    refresh_token = auth.create_refresh_token({"sub": request.email})
     
     response.set_cookie(
-        key="token",
+        key="access_token",
         value=token,
         httponly=True,
         secure=True,
         samesite="none",
-        max_age=auth.ACCESS_TOKEN_EXPIRE_MINUTES,
+        max_age=auth.ACCESS_TOKEN_EXPIRE_SECONDS,
+        path="/"
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=auth.REFRESH_TOKEN_EXPIRE_SECONDS,
         path="/"
     )
     
@@ -88,6 +99,30 @@ def refresh_token(
     new_access_token = auth.create_access_token({"sub": email})
 
     return {"access_token": new_access_token}
+
+
+@router.post("/auth/refresh")
+def refresh(response: Response, refresh_token: str = Cookie(None)):
+
+    if not refresh_token:
+        raise HTTPException(status_code=401)
+
+    payload = auth.verify_refresh_token(refresh_token)
+    if not payload:
+        raise HTTPException(status_code=401)
+
+    new_access_token = auth.create_access_token({"sub": payload["sub"]})
+
+    response.set_cookie(
+        key="access_token",
+        value=new_access_token,
+        httponly=True,
+        samesite="none",
+        secure=True,
+        max_age=auth.ACCESS_TOKEN_EXPIRE_SECONDS,
+    )
+
+    return {"message": "refreshed"}
 
 
 # ==========================
@@ -143,7 +178,15 @@ def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Se
     
 #     return new_message
 
-
+# @router.post("/clipboards/{slug}")
+# async def add_clipboard_message(slug: int,
+#         content_type: str = Form(...),
+#         content: str | None = Form(None),
+#         image: UploadFile | None = File(None),
+#         # req: Request
+#     ):
+#     # print(await req.json())
+#     return {"asd" : "asd"}
 
 @router.post("/clipboards/{slug}")
 def add_clipboard_message(slug: int,
