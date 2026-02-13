@@ -4,13 +4,15 @@ from api.clipboard import auth
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
                                 , MeResponse, ClipboardsResponse\
                                 , CurrentClipboardData, ClipboardAddMessageRequest\
+                                , ClipboardCreateRequest
                                 
 
 from api.clipboard.service import get_clipboards \
                                 , get_all_current_clipboard_data \
                                 , add_clipboard_data_text \
                                 , add_clipboard_data_image \
-                                , delete_message
+                                , delete_message \
+                                , create_clipboard
 
 router = APIRouter()
 
@@ -153,6 +155,12 @@ def me(current_user=Depends(auth.get_current_user)):
 def clipboards(current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     all_clipboards = get_clipboards(db, current_user.id)
     return all_clipboards
+
+
+@router.post("/clipboards/create")
+def clipboards(data: ClipboardCreateRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    new_clipboard = create_clipboard(db, current_user.id, name=data.name)
+    return {"message" : "Successfully Created"} # TODO: Change this to a better message
 
 
 @router.get("/clipboards/{slug}", response_model = CurrentClipboardData)

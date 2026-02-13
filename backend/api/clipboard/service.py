@@ -126,7 +126,6 @@ def delete_message(db: Session, clipboard_id: int, message_id: int):
             models.ClipboardData.clipboard_id == clipboard_id,
         ).first()
     
-    print("message", message.content, message.content_type)
     
     if message:
         image_path = None
@@ -136,5 +135,4 @@ def delete_message(db: Session, clipboard_id: int, message_id: int):
         db.commit()
         if image_path:
             os.remove(image_path)
-            print("Removing ", image_path)
         return {"detail": "Message deleted successfully"}

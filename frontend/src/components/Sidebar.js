@@ -9,7 +9,8 @@ import CreateNewClipboardModal from "./modals/CreateNewClipboard";
 import TooltipWrapper from "./primitives/TooltipWrapper";
 import { logout } from "@/api/auth";
 import { useUser } from "@/context/UserContext";
-import { useClipboards } from "@/context/ClipboardContext";
+import { useClipboards, create } from "@/context/ClipboardContext";
+import { createClipboard } from "@/api/clipboard";
 
 const navItems = [
         { 
@@ -82,11 +83,11 @@ export default function Sidebar() {
         );
     };
 
-    const handleCreateNewClipboard = (clipboardData) => {
+    const handleCreateNewClipboard = async (clipboardData) => {
         console.log("Creating new clipboard named", clipboardData);
 
         // API call here to create the new clipboard
-
+        await createClipboard(clipboardData);
         setCreateNewClipboardModalOpen(false);
     }
 

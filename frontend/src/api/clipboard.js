@@ -8,9 +8,10 @@ export const getClipboards = async () => {
 
 // Create new clipboard
 export const createClipboard = async (name) => {
-  return await apiFetch("/clipboards", {
+  console.log("Name", name);
+  return await apiFetch("/clipboards/create", {
     method: "POST",
-    body: { name },
+    body: name ,
   });
 };
 

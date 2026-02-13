@@ -42,3 +42,6 @@ class CurrentClipboardData(BaseModel):
 class ClipboardAddMessageRequest(BaseModel):
     content_type: str
     content: str
+
+class ClipboardCreateRequest(BaseModel):
+    name: str
