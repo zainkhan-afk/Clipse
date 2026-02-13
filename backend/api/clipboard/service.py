@@ -5,6 +5,8 @@ from datetime import datetime
 from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
                                 , CurrentClipboardData, ClipboardAddMessageRequest
 
+from api.clipboard.models import ContentType
+
 import uuid
 import shutil
 import os
@@ -128,7 +130,7 @@ def delete_message(db: Session, clipboard_id: int, message_id: int):
     
     if message:
         image_path = None
-        if message.content_type == "image":
+        if message.content_type == ContentType.image:
             image_path = message.content
         db.delete(message)
         db.commit()

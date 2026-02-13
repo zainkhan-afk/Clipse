@@ -146,14 +146,7 @@ def me(current_user=Depends(auth.get_current_user)):
                         is_verified=current_user.is_verified
                       )
     
-    print(user_data)
     return user_data
-    
-    return {
-        "id": current_user.id,
-        "email": current_user.email,
-        "is_verified": current_user.is_verified
-    }
 
 
 @router.get("/clipboards", response_model=list[ClipboardsResponse])
@@ -166,6 +159,27 @@ def clipboards(current_user=Depends(auth.get_current_user), db: Session = Depend
 def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     all_clipboard_data = get_all_current_clipboard_data(db, user_id=current_user.id, clipboard_id=slug)
     return all_clipboard_data
+
+
+@router.post("/auth/logout")
+def logout(response: Response):
+
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        samesite="none",
+        secure=True,  # must match how it was set
+    )
+
+    response.delete_cookie(
+        key="refresh_token",
+        path="/",
+        samesite="none",
+        secure=True,
+    )
+
+    return {"message": "Logged out"}
+
 
 
 # @router.post("/clipboards/{slug}")

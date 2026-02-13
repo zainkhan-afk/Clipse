@@ -48,8 +48,10 @@ export const register = async (userData) => {
 };
 
 // Logout function
-export const logout = () => {
-  Cookies.remove("token", { path: "/" });
+export const logout = async () => {
+  await apiFetch("/auth/logout", {
+    method: "POST",
+  });
 };
 
 // Example: get user profile
