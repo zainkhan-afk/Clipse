@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response, Request, Cookie
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response, Request, Cookie, status
 from sqlalchemy.orm import Session
 from api.clipboard import auth
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
@@ -160,7 +160,16 @@ def clipboards(current_user=Depends(auth.get_current_user), db: Session = Depend
 @router.post("/clipboards/create")
 def clipboards(data: ClipboardCreateRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     new_clipboard = create_clipboard(db, current_user.id, name=data.name)
-    return {"message" : "Successfully Created"} # TODO: Change this to a better message
+    if not new_clipboard:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Clipboard with this name already exists"
+        )
+
+    return {
+        "message": "Clipboard successfully created",
+        "id": new_clipboard.id
+    }
 
 
 @router.get("/clipboards/{slug}", response_model = CurrentClipboardData)

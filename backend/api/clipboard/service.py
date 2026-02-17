@@ -16,6 +16,11 @@ import os
 # ----------------------------
 
 def create_clipboard(db: Session, user_id: int, name: str):
+    existing_db = db.query(models.Clipboard).filter(models.Clipboard.name == name, models.Clipboard.user_id == user_id).one_or_none()
+    if existing_db:
+        return None
+    
+    
     clipboard = models.Clipboard(
         user_id=user_id,
         name=name,

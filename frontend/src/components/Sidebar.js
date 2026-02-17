@@ -45,7 +45,9 @@ export default function Sidebar() {
     const [userInfo, setUserInfo] = useState({});
     const [navigationItems, setNavigationItems] = useState(navItems);
     const [createNewClipboardModalOpen, setCreateNewClipboardModalOpen] = useState(false);
+    const [clipboardCreationFailure, setClipboardCreationFailure] = useState(false);
     const [userSettingsOpen, setUserSettingsOpen] = useState(false);
+    
     const [clipboards, setClipboards] = useState([
                                                     { name: "Common"},
                                                     { name: "Devices"},
@@ -87,9 +89,15 @@ export default function Sidebar() {
         console.log("Creating new clipboard named", clipboardData);
 
         // API call here to create the new clipboard
-        const res = await createClipboard(clipboardData);
-        await refreshClipboards();
-        setCreateNewClipboardModalOpen(false);
+        try{
+            const res = await createClipboard(clipboardData);
+            await refreshClipboards();
+            setCreateNewClipboardModalOpen(false);
+            setClipboardCreationFailure(false);
+        }
+        catch(error){
+            setClipboardCreationFailure(true);
+        }
     }
 
     const handleLogout = async () => {
@@ -230,6 +238,7 @@ export default function Sidebar() {
             isOpen={createNewClipboardModalOpen}
             onClose={() => setCreateNewClipboardModalOpen(false)}
             onConfirm={handleCreateNewClipboard}
+            clipboardCreationFailure={clipboardCreationFailure}
         />
 
         </div>

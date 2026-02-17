@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function CreateNewClipboardModal({ isOpen, onClose, onConfirm }) {
+export default function CreateNewClipboardModal({ isOpen, onClose, onConfirm, clipboardCreationFailure }) {
     const [clipboardData, setClipboardData] = useState({
         name: "",
     })
@@ -29,6 +29,8 @@ export default function CreateNewClipboardModal({ isOpen, onClose, onConfirm }) 
                     value={clipboardData.name}
                     onChange={(e) => setClipboardData({ ...clipboardData, name: e.target.value })}
                 />
+
+                {clipboardCreationFailure && (<p className="py-2 font-semibold text-red-800 dark:text-red">Clipboard with that name already exists.</p>)}
 
                 {/* Buttons */}
                 <div className="mt-4 flex justify-end gap-2">
