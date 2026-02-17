@@ -40,7 +40,7 @@ const navItems = [
 export default function Sidebar() {
     const router = useRouter();
     const { UserData, loading: userLoading } = useUser();
-    const { ClipboardsData, loading: clipboardsLoading } = useClipboards();
+    const { ClipboardsData, loading: clipboardsLoading, refresh: refreshClipboards } = useClipboards();
     
     const [userInfo, setUserInfo] = useState({});
     const [navigationItems, setNavigationItems] = useState(navItems);
@@ -87,7 +87,8 @@ export default function Sidebar() {
         console.log("Creating new clipboard named", clipboardData);
 
         // API call here to create the new clipboard
-        await createClipboard(clipboardData);
+        const res = await createClipboard(clipboardData);
+        await refreshClipboards();
         setCreateNewClipboardModalOpen(false);
     }
 
