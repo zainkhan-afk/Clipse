@@ -174,8 +174,9 @@ export default function ClipboardPage() {
         <h2>{clipboardData?.clipboard?.name}</h2>
     </div>
 
+    <div className="flex flex-row w-full h-full gap-3">
     {/* Outer box */}
-    <div className="flex flex-col flex-1 min-h-0 bg-gray-800 w-full bg-opacity-10 rounded-lg p-8 shadow-lg gap-2">
+    <div className="flex flex-col flex-3 min-h-0 bg-gray-800 w-full bg-opacity-10 rounded-lg p-8 shadow-lg gap-2">
 
         {/* Input section */}
         <div className="flex flex-col bg-gray-300 bg-opacity-10 rounded-lg shadow-lg p-4">
@@ -250,8 +251,9 @@ export default function ClipboardPage() {
         </div>
     </div>
 
-    <div className="flex flex-col">
+    <div className="flex-1 flex-col">
         <PropertiesBar/>
+    </div>
     </div>
 
     <DeleteMessageConfirmationModal
