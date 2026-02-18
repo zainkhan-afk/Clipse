@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function CreateNewClipboardModal({ isOpen, onClose, onConfirm, clipboardCreationFailure }) {
     const [clipboardData, setClipboardData] = useState({
         name: "",
     })
+
+    useEffect(() => {
+        if (!isOpen) {
+            setClipboardData({name : ""});
+        }
+    }, [isOpen]);
     
     if (!isOpen) return null; // If the modal is not open, don't render anything
 

@@ -5,6 +5,7 @@ import { Copy, Trash, Paperclip, Delete } from "lucide-react";
 
 import TooltipWrapper from "@/components/primitives/TooltipWrapper";
 import InteractiveIcon from "@/components/primitives/InteractiveIcon";
+import PropertiesBar from "@/components/propertiesbar";
 import DeleteMessageConfirmationModal from "@/components/modals/DeleteMessage";
 
 import { getClipboardData, sendToClipboard, deleteMessage } from "@/api/clipboard";
@@ -247,6 +248,10 @@ export default function ClipboardPage() {
             ))}
 
         </div>
+    </div>
+
+    <div className="flex flex-col">
+        <PropertiesBar/>
     </div>
 
     <DeleteMessageConfirmationModal
