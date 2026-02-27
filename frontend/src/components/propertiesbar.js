@@ -13,11 +13,15 @@ export default function PropertiesBar() {
         <div
             className="bg-gray-900 h-full w-full text-white pt-1 pb-[40px] flex rounded-lg flex-col justify-between"
         >
-            <div className = "p-10">
+            <div className = "flex flex-col p-10 gap-2">
                 <h3 className="">Properties</h3>
-                <div className = "ml-10">
-                    <p>Name</p>
-                    <input className="w-full"></input>
+                <div className = "ml-5 flex flex-row gap-2">
+                    <p className="mt-2">Name</p>
+                    <input className="w-full border border-black rounded-lg p-2" type="text" placeholder="Clipboard Name"></input>
+                </div>
+                <div className = "ml-5 flex flex-row gap-2">
+                    <p className="mt-2">Name</p>
+                    <input className="w-full border border-black rounded-lg p-2" type="text" placeholder="Clipboard Name"></input>
                 </div>
             </div>
         </div>
