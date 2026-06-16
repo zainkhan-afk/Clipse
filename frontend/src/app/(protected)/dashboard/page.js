@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, Clipboard } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useClipboards } from "@/context/ClipboardContext";
+import { formatTTL } from "@/lib/ttl";
 
 export default function Dashboard() {
   const { UserData } = useUser();
@@ -57,15 +58,23 @@ export default function Dashboard() {
                 className="group animate-rise rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow)] transition-all hover:-translate-y-0.5 hover:border-line-strong"
               >
                 <div className="flex items-start justify-between">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent-soft text-accent">
-                    <Clipboard className="h-5 w-5" />
+                  <span
+                    className="grid h-10 w-10 place-items-center rounded-xl text-accent"
+                    style={{ background: c.color ? `${c.color}22` : "var(--accent-soft)" }}
+                  >
+                    <Clipboard className="h-5 w-5" style={c.color ? { color: c.color } : undefined} />
                   </span>
                   <ArrowUpRight className="h-4 w-4 text-faint transition-colors group-hover:text-accent" />
                 </div>
-                <h3 className="mt-4 truncate text-base font-medium">{c.name}</h3>
+                <h3 className="mt-4 flex items-center gap-2 text-base font-medium">
+                  {c.color && (
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: c.color }} />
+                  )}
+                  <span className="truncate">{c.name}</span>
+                </h3>
                 <p className="mt-1 font-mono text-xs text-faint">
                   #{c.id}
-                  {c.persistance ? ` · ${c.persistance}d` : ""}
+                  {c.persistance ? ` · ${formatTTL(c.persistance)}` : ""}
                 </p>
               </Link>
             ))}

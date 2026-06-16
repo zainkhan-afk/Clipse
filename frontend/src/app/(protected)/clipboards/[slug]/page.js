@@ -4,7 +4,8 @@ import { useParams } from "next/navigation";
 import { Copy, Trash2, Paperclip, SendHorizontal, Check, ImageIcon, Type } from "lucide-react";
 
 import TooltipWrapper from "@/components/primitives/TooltipWrapper";
-import PropertiesBar from "@/components/propertiesbar";
+import ClipboardAbout from "@/components/ClipboardAbout";
+import ClipboardSettings from "@/components/ClipboardSettings";
 import DeleteMessageConfirmationModal from "@/components/modals/DeleteMessage";
 
 import { getClipboardData, sendToClipboard, deleteMessage } from "@/api/clipboard";
@@ -277,9 +278,14 @@ export default function ClipboardPage() {
             </div>
           </div>
 
-          {/* Properties */}
-          <div className="lg:w-72 lg:shrink-0">
-            <PropertiesBar clipboard={clipboardData?.clipboard} count={messages.length} />
+          {/* About + Settings */}
+          <div className="flex flex-col gap-4 lg:w-72 lg:shrink-0">
+            <ClipboardAbout clipboard={clipboardData?.clipboard} count={messages.length} />
+            <ClipboardSettings
+              clipboard={clipboardData?.clipboard}
+              count={messages.length}
+              onRefresh={() => setRefreshMessages(true)}
+            />
           </div>
         </div>
       </div>

@@ -49,7 +49,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
       setNavigationItems((prev) =>
         prev.map((item) =>
           item.name === "Clipboards"
-            ? { ...item, children: ClipboardsData.map((c) => ({ id: c.id, name: c.name })) }
+            ? { ...item, children: ClipboardsData.map((c) => ({ id: c.id, name: c.name, color: c.color })) }
             : item
         )
       );
@@ -163,7 +163,14 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
                           : "text-muted hover:bg-raised hover:text-ink"
                       }`}
                     >
-                      <span className="font-mono text-xs text-faint">#</span>
+                      {child.color ? (
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ background: child.color }}
+                        />
+                      ) : (
+                        <span className="font-mono text-xs text-faint">#</span>
+                      )}
                       <span className="truncate">{child.name}</span>
                     </Link>
                   );

@@ -21,6 +21,21 @@ export const deleteClipboard = async (id) => {
   });
 };
 
+// Update clipboard settings (name, persistence in minutes, color)
+export const updateClipboard = async (id, data) => {
+  return await apiFetch(`/clipboards/${id}`, {
+    method: "PATCH",
+    body: data,
+  });
+};
+
+// Remove every item in a clipboard (keeps the clipboard itself)
+export const clearClipboard = async (id) => {
+  return await apiFetch(`/clipboards/${id}/messages`, {
+    method: "DELETE",
+  });
+};
+
 
 
 // Fetch all clipboard data
