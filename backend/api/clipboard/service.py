@@ -39,6 +39,59 @@ def get_clipboards(db: Session, user_id: int):
 
     return [ClipboardsResponse(**clipboard.to_dict()) for clipboard in all_clipboards]
 
+
+def get_clipboard_for_user(db: Session, user_id: int, clipboard_id: int):
+    """Return the clipboard if it exists and belongs to the user, else None."""
+    return db.query(models.Clipboard).filter(
+        models.Clipboard.id == clipboard_id,
+        models.Clipboard.user_id == user_id,
+    ).first()
+
+
+# ----------------------------
+# DELETE CLIPBOARD DATA
+# ----------------------------
+
+def delete_all_messages(db: Session, clipboard_id: int):
+    messages = db.query(models.ClipboardData).filter(
+        models.ClipboardData.clipboard_id == clipboard_id,
+    ).all()
+
+    # Collect image files so they can be removed from disk after the rows are gone.
+    image_paths = [
+        message.content
+        for message in messages
+        if message.content_type == ContentType.image and message.content
+    ]
+
+    deleted_count = db.query(models.ClipboardData).filter(
+        models.ClipboardData.clipboard_id == clipboard_id,
+    ).delete(synchronize_session=False)
+    db.commit()
+
+    for path in image_paths:
+        if os.path.exists(path):
+            os.remove(path)
+
+    return {"detail": "All messages deleted successfully", "deleted": deleted_count}
+
+def delete_entire_clipboard(db: Session, clipboard_id: int):
+    clipboard = db.query(models.Clipboard).filter(
+        models.Clipboard.id == clipboard_id,
+    ).first()
+
+    if not clipboard:
+        return None
+
+    # Remove the clipboard's items (and their image files) first so the
+    # foreign key from clipboard_data isn't left dangling.
+    delete_all_messages(db, clipboard_id)
+
+    db.delete(clipboard)
+    db.commit()
+
+    return {"detail": "Clipboard deleted successfully"}
+
 # ----------------------------
 # ADD DEVICE TO USER ACCOUNT
 # ----------------------------

@@ -12,6 +12,9 @@ from api.clipboard.service import get_clipboards \
                                 , add_clipboard_data_text \
                                 , add_clipboard_data_image \
                                 , delete_message \
+                                , delete_all_messages \
+                                , delete_entire_clipboard \
+                                , get_clipboard_for_user \
                                 , create_clipboard
 
 router = APIRouter()
@@ -131,13 +134,6 @@ def refresh(response: Response, refresh_token: str = Cookie(None)):
 # PROTECTED ROUTE
 # ==========================
 
-# @router.get("/auth/me")
-# def me(request: Request):
-#     print("request", request)
-#     token = request.cookies.get("token")
-#     print("token", token)
-#     return {"email": "zain@example.com"}
-
 @router.get("/auth/me", response_model=MeResponse)
 def me(current_user=Depends(auth.get_current_user)):
     user_data = MeResponse(
@@ -178,6 +174,15 @@ def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Se
     return all_clipboard_data
 
 
+@router.delete("/clipboards/{clipboard_id}")
+def delete_clipboard(clipboard_id: int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    clipboard = get_clipboard_for_user(db, current_user.id, clipboard_id)
+    if not clipboard:
+        raise HTTPException(status_code=404, detail="Clipboard not found")
+
+    return delete_entire_clipboard(db, clipboard_id)
+
+
 @router.post("/auth/logout")
 def logout(response: Response):
 
@@ -197,27 +202,6 @@ def logout(response: Response):
 
     return {"message": "Logged out"}
 
-
-
-# @router.post("/clipboards/{slug}")
-# def add_clipboard_message(slug:int, request: ClipboardAddMessageRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
-    
-#     new_message = add_clipboard_data(db, clipboard_id=slug, message = request)
-
-#     if not new_message:
-#         raise HTTPException(status_code=401, detail="Unable to add new message")
-    
-#     return new_message
-
-# @router.post("/clipboards/{slug}")
-# async def add_clipboard_message(slug: int,
-#         content_type: str = Form(...),
-#         content: str | None = Form(None),
-#         image: UploadFile | None = File(None),
-#         # req: Request
-#     ):
-#     # print(await req.json())
-#     return {"asd" : "asd"}
 
 @router.post("/clipboards/{slug}")
 def add_clipboard_message(slug: int,
@@ -269,3 +253,12 @@ def delete_clipboard_message(
         return {"detail": "Message deleted successfully"}
     else:
         raise HTTPException(400, "Invalid content type")
+
+
+@router.delete("/clipboards/{clipboard_id}/messages")
+def delete_all_clipboard_messages(clipboard_id: int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    clipboard = get_clipboard_for_user(db, current_user.id, clipboard_id)
+    if not clipboard:
+        raise HTTPException(status_code=404, detail="Clipboard not found")
+
+    return delete_all_messages(db, clipboard_id)
