@@ -27,6 +27,8 @@ class ClipboardsResponse(BaseModel):
     id: int
     name: str
     persistance: int|None
+    color: str|None = None
+    created_at: datetime|None = None
 
 class ClipboardData(BaseModel):
     id: int
@@ -45,3 +47,8 @@ class ClipboardAddMessageRequest(BaseModel):
 
 class ClipboardCreateRequest(BaseModel):
     name: str
+
+class ClipboardUpdateRequest(BaseModel):
+    name: str|None = None
+    persistance: int|None = None
+    color: str|None = None

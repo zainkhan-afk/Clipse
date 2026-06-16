@@ -21,7 +21,7 @@ export const deleteClipboard = async (id) => {
   });
 };
 
-// Update clipboard settings (name, persistence in minutes, color)
+// Update clipboard settings (name, persistence in seconds, color)
 export const updateClipboard = async (id, data) => {
   return await apiFetch(`/clipboards/${id}`, {
     method: "PATCH",

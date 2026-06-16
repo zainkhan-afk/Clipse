@@ -31,6 +31,7 @@ class Clipboard(Base):
     name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     persistance = Column(Integer, nullable=True)
+    color = Column(String, nullable=True)
 
     user = relationship("User", back_populates="clipboards")
     data = relationship("ClipboardData", back_populates="clipboard")
@@ -40,7 +41,9 @@ class Clipboard(Base):
         return {
             "id" : self.id,
             "name" : self.name,
-            "persistance" : self.persistance
+            "persistance" : self.persistance,
+            "color" : self.color,
+            "created_at" : self.created_at
         }
 
 

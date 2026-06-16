@@ -4,7 +4,7 @@ from api.clipboard import auth
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
                                 , MeResponse, ClipboardsResponse\
                                 , CurrentClipboardData, ClipboardAddMessageRequest\
-                                , ClipboardCreateRequest
+                                , ClipboardCreateRequest, ClipboardUpdateRequest
                                 
 
 from api.clipboard.service import get_clipboards \
@@ -15,6 +15,7 @@ from api.clipboard.service import get_clipboards \
                                 , delete_all_messages \
                                 , delete_entire_clipboard \
                                 , get_clipboard_for_user \
+                                , update_clipboard \
                                 , create_clipboard
 
 router = APIRouter()
@@ -172,6 +173,27 @@ def clipboards(data: ClipboardCreateRequest, current_user=Depends(auth.get_curre
 def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     all_clipboard_data = get_all_current_clipboard_data(db, user_id=current_user.id, clipboard_id=slug)
     return all_clipboard_data
+
+
+@router.patch("/clipboards/{clipboard_id}")
+def update_clipboard_settings(
+        clipboard_id: int,
+        data: ClipboardUpdateRequest,
+        current_user=Depends(auth.get_current_user),
+        db: Session = Depends(auth.get_db),
+    ):
+    clipboard = get_clipboard_for_user(db, current_user.id, clipboard_id)
+    if not clipboard:
+        raise HTTPException(status_code=404, detail="Clipboard not found")
+
+    updated = update_clipboard(db, clipboard_id, data)
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Clipboard with this name already exists",
+        )
+
+    return updated.to_dict()
 
 
 @router.delete("/clipboards/{clipboard_id}")

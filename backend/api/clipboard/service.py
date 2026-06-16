@@ -48,6 +48,39 @@ def get_clipboard_for_user(db: Session, user_id: int, clipboard_id: int):
     ).first()
 
 
+def update_clipboard(db: Session, clipboard_id: int, data):
+    """Apply a partial settings update (name / persistance / color).
+
+    Returns the updated clipboard, or None if the new name collides with
+    another of the user's clipboards.
+    """
+    clipboard = db.query(models.Clipboard).filter(
+        models.Clipboard.id == clipboard_id,
+    ).first()
+    if not clipboard:
+        return None
+
+    # Only touch fields the client actually sent.
+    fields = data.model_dump(exclude_unset=True)
+
+    new_name = fields.get("name")
+    if new_name is not None and new_name != clipboard.name:
+        clash = db.query(models.Clipboard).filter(
+            models.Clipboard.user_id == clipboard.user_id,
+            models.Clipboard.name == new_name,
+            models.Clipboard.id != clipboard_id,
+        ).first()
+        if clash:
+            return None
+
+    for key, value in fields.items():
+        setattr(clipboard, key, value)
+
+    db.commit()
+    db.refresh(clipboard)
+    return clipboard
+
+
 # ----------------------------
 # DELETE CLIPBOARD DATA
 # ----------------------------

@@ -18,9 +18,9 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
   const [name, setName] = useState("");
   const [color, setColor] = useState("");
   const [ttlMode, setTtlMode] = useState("preset"); // "preset" | "custom"
-  const [presetMinutes, setPresetMinutes] = useState(0);
+  const [presetSeconds, setPresetSeconds] = useState(0);
   const [customValue, setCustomValue] = useState(1);
-  const [customUnit, setCustomUnit] = useState(1440);
+  const [customUnit, setCustomUnit] = useState(86400);
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -36,13 +36,13 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
     if (!clipboard) return;
     setName(clipboard.name ?? "");
     setColor(clipboard.color ?? "");
-    const m = clipboard.persistance ?? 0;
-    if (isPreset(m)) {
+    const s = clipboard.persistance ?? 0;
+    if (isPreset(s)) {
       setTtlMode("preset");
-      setPresetMinutes(m);
+      setPresetSeconds(s);
     } else {
       setTtlMode("custom");
-      const c = splitCustom(m);
+      const c = splitCustom(s);
       setCustomValue(c.value);
       setCustomUnit(c.unit);
     }
@@ -51,8 +51,8 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipboard?.id]);
 
-  const currentMinutes =
-    ttlMode === "preset" ? presetMinutes : Math.max(0, Number(customValue) || 0) * customUnit;
+  const currentSeconds =
+    ttlMode === "preset" ? presetSeconds : Math.max(0, Number(customValue) || 0) * customUnit;
 
   const nameTrimmed = name.trim();
 
@@ -68,7 +68,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
     !!clipboard &&
     (nameTrimmed !== (clipboard.name ?? "") ||
       (color || "") !== (clipboard.color ?? "") ||
-      currentMinutes !== (clipboard.persistance ?? 0));
+      currentSeconds !== (clipboard.persistance ?? 0));
 
   const canSave = changed && !nameError && !saving;
 
@@ -80,7 +80,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
     try {
       await updateClipboard(clipboard.id, {
         name: nameTrimmed,
-        persistance: currentMinutes === 0 ? null : currentMinutes,
+        persistance: currentSeconds === 0 ? null : currentSeconds,
         color: color || null,
       });
       await refreshClipboards();
@@ -197,20 +197,20 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
         <p className="mt-1 text-xs text-faint">Automatically remove items after…</p>
 
         <select
-          value={ttlMode === "custom" ? "custom" : String(presetMinutes)}
+          value={ttlMode === "custom" ? "custom" : String(presetSeconds)}
           onChange={(e) => {
             const v = e.target.value;
             if (v === "custom") {
               setTtlMode("custom");
             } else {
               setTtlMode("preset");
-              setPresetMinutes(Number(v));
+              setPresetSeconds(Number(v));
             }
           }}
           className="mt-3 w-full appearance-none rounded-xl border border-line bg-bg px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-soft"
         >
           {TTL_PRESETS.map((p) => (
-            <option key={p.minutes} value={String(p.minutes)}>
+            <option key={p.seconds} value={String(p.seconds)}>
               {p.label}
             </option>
           ))}
@@ -232,7 +232,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
               className="flex-1 appearance-none rounded-xl border border-line bg-bg px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-soft"
             >
               {TTL_UNITS.map((u) => (
-                <option key={u.minutes} value={u.minutes}>
+                <option key={u.seconds} value={u.seconds}>
                   {u.label}
                 </option>
               ))}
