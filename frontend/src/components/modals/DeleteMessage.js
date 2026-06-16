@@ -1,36 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { AlertTriangle } from "lucide-react";
 
 export default function DeleteMessageConfirmationModal({ isOpen, onClose, onConfirm }) {
-  if (!isOpen) return null; // If the modal is not open, don't render anything
+  if (!isOpen) return null;
 
   return (
-    // Modal background overlay
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      {/* Modal box */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-96">
-        {/* Title */}
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-          Are you sure?
-        </h2>
-
-        {/* Message */}
-        <p className="mt-2 text-gray-600 dark:text-gray-300">
-          Do you really want to delete this message? This action cannot be undone.
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm animate-fade"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm animate-rise rounded-2xl border border-line bg-surface p-6 shadow-[var(--shadow)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="grid h-11 w-11 place-items-center rounded-full bg-accent-soft text-accent">
+          <AlertTriangle className="h-5 w-5" />
+        </span>
+        <h2 className="mt-4 text-lg font-semibold tracking-tight">Delete this item?</h2>
+        <p className="mt-1.5 text-sm text-muted">
+          This will permanently remove it from the clipboard. This action cannot be undone.
         </p>
 
-        {/* Buttons */}
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-6 flex justify-end gap-2.5">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+            className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-raised"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
           >
             Delete
           </button>

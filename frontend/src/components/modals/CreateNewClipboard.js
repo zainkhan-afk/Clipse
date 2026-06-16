@@ -1,60 +1,75 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ClipboardPlus } from "lucide-react";
 
 export default function CreateNewClipboardModal({ isOpen, onClose, onConfirm, clipboardCreationFailure }) {
-    const [clipboardData, setClipboardData] = useState({
-        name: "",
-    })
+  const [clipboardData, setClipboardData] = useState({ name: "" });
 
-    useEffect(() => {
-        if (!isOpen) {
-            setClipboardData({name : ""});
-        }
-    }, [isOpen]);
-    
-    if (!isOpen) return null; // If the modal is not open, don't render anything
+  useEffect(() => {
+    if (!isOpen) setClipboardData({ name: "" });
+  }, [isOpen]);
 
-    return (
-        // Modal background overlay
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-96">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                    Create New Clipboard
-                </h2>
+  if (!isOpen) return null;
 
-                <p className="mt-2 text-gray-600 dark:text-gray-300">
-                    Do you really want to delete this message? This action cannot be undone.
-                </p>
-                
-                <p className="py-2 font-semibold text-gray-300 dark:text-white">Clipboard Name</p>
-                <input 
-                    type="text"
-                    placeholder="Clipboard Name"
-                    className="w-full border border-black rounded-lg p-2"
-                    value={clipboardData.name}
-                    onChange={(e) => setClipboardData({ ...clipboardData, name: e.target.value })}
-                />
+  const submit = () => {
+    if (clipboardData.name.trim()) onConfirm(clipboardData);
+  };
 
-                {clipboardCreationFailure && (<p className="py-2 font-semibold text-red-800 dark:text-red">Clipboard with that name already exists.</p>)}
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm animate-fade"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm animate-rise rounded-2xl border border-line bg-surface p-6 shadow-[var(--shadow)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="grid h-11 w-11 place-items-center rounded-full bg-accent-soft text-accent">
+          <ClipboardPlus className="h-5 w-5" />
+        </span>
+        <h2 className="mt-4 text-lg font-semibold tracking-tight">New clipboard</h2>
+        <p className="mt-1.5 text-sm text-muted">
+          Give it a short, memorable name. You can switch between clipboards from the sidebar.
+        </p>
 
-                {/* Buttons */}
-                <div className="mt-4 flex justify-end gap-2">
-                <button
-                    onClick={onClose}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={() => onConfirm(clipboardData)}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                >
-                    Create
-                </button>
-                </div>
+        <label className="mt-5 flex flex-col gap-1.5">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted">
+            Clipboard name
+          </span>
+          <input
+            type="text"
+            autoFocus
+            placeholder="e.g. work, phone, scratch"
+            className="w-full rounded-xl border border-line bg-bg px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent-soft"
+            value={clipboardData.name}
+            onChange={(e) => setClipboardData({ ...clipboardData, name: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+          />
+        </label>
 
-            </div>
+        {clipboardCreationFailure && (
+          <p className="mt-3 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-sm text-accent">
+            A clipboard with that name already exists.
+          </p>
+        )}
+
+        <div className="mt-6 flex justify-end gap-2.5">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-raised"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={!clipboardData.name.trim()}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
+          >
+            Create
+          </button>
         </div>
-    )
+      </div>
+    </div>
+  );
 }
