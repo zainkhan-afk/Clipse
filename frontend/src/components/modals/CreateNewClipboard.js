@@ -1,22 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ClipboardPlus } from "lucide-react";
 
 export default function CreateNewClipboardModal({ isOpen, onClose, onConfirm, clipboardCreationFailure }) {
   const [clipboardData, setClipboardData] = useState({ name: "" });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!isOpen) setClipboardData({ name: "" });
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Render through a portal so the overlay isn't trapped by the sidebar's
+  // transform (a transformed ancestor becomes the containing block for fixed
+  // elements, which would otherwise confine this modal to the sidebar).
+  if (!isOpen || !mounted) return null;
 
   const submit = () => {
     if (clipboardData.name.trim()) onConfirm(clipboardData);
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm animate-fade"
       onClick={onClose}
@@ -70,6 +77,7 @@ export default function CreateNewClipboardModal({ isOpen, onClose, onConfirm, cl
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
