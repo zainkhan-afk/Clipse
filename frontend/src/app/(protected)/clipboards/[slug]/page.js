@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Copy, Trash2, Paperclip, SendHorizontal, Check, ImageIcon, Type } from "lucide-react";
+import { Copy, Trash2, Paperclip, SendHorizontal, Check, ImageIcon, Type, X } from "lucide-react";
 
 import TooltipWrapper from "@/components/primitives/TooltipWrapper";
 import ClipboardAbout from "@/components/ClipboardAbout";
@@ -16,11 +16,20 @@ export default function ClipboardPage() {
   const fileInputRef = useRef(null);
 
   const [textToSend, setTextToSend] = useState("");
+  const [pendingImages, setPendingImages] = useState([]); // staged, not yet uploaded
+  const [sending, setSending] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [refreshMessages, setRefreshMessages] = useState(false);
   const [messageDeleteModalOpen, setMessageDeleteModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const [clipboardData, setClipboardData] = useState({});
+
+  // Release object URLs for any still-staged previews when leaving the page.
+  const pendingRef = useRef([]);
+  useEffect(() => {
+    pendingRef.current = pendingImages;
+  }, [pendingImages]);
+  useEffect(() => () => pendingRef.current.forEach((p) => URL.revokeObjectURL(p.url)), []);
 
   const formatter = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
@@ -41,47 +50,99 @@ export default function ClipboardPage() {
     fetchData();
   }, [slug, refreshMessages]);
 
-  const handleSendTextToClipboard = async (text) => {
-    if (!text) return;
+  const sendText = async (text) => {
+    const formData = new FormData();
+    formData.append("content_type", "text");
+    formData.append("content", text);
+    await sendToClipboard(formData, slug);
+  };
+
+  const sendImage = async (file) => {
+    const formData = new FormData();
+    formData.append("content_type", "image");
+    formData.append("image", file);
+    await sendToClipboard(formData, slug);
+  };
+
+  // Images are staged in the composer as previews; nothing uploads until Send.
+  const stageImages = (files) => {
+    if (!files.length) return;
+    setPendingImages((prev) => [
+      ...prev,
+      ...files.map((file) => ({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    ]);
+  };
+
+  const removePendingImage = (id) => {
+    setPendingImages((prev) => {
+      const target = prev.find((p) => p.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter((p) => p.id !== id);
+    });
+  };
+
+  const imagesFromClipboard = (e) => {
+    const files = [];
+    for (const item of e.clipboardData?.items ?? []) {
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) files.push(file);
+      }
+    }
+    return files;
+  };
+
+  const handleSend = async () => {
+    const text = textToSend.trim();
+    if (!text && pendingImages.length === 0) return;
+
+    setSending(true);
     try {
-      const formData = new FormData();
-      formData.append("content_type", "text");
-      formData.append("content", text);
-      await sendToClipboard(formData, slug);
+      for (const img of pendingImages) {
+        await sendImage(img.file);
+        URL.revokeObjectURL(img.url);
+      }
+      if (text) await sendText(text);
+
+      setPendingImages([]);
       setTextToSend("");
       setRefreshMessages(true);
     } catch (err) {
-      console.error("Failed to send message to clipboard", err);
+      console.error("Failed to send to clipboard", err);
+    } finally {
+      setSending(false);
     }
   };
 
-  const handleSendImageToClipboard = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append("content_type", "image");
-      formData.append("image", file);
-      await sendToClipboard(formData, slug);
-      setRefreshMessages(true);
-    } catch (err) {
-      console.error("Failed to send image", err);
-    }
-  };
-
+  // Paste anywhere on the page: images get staged, text is added straight away.
   const handlePaste = (e) => {
-    e.preventDefault();
-    const items = e.clipboardData.items;
-    for (const item of items) {
-      if (item.kind === "file" && item.type.startsWith("image/")) {
-        const file = item.getAsFile();
-        handleSendImageToClipboard(file);
-        return;
-      }
-      if (item.kind === "string" && item.type === "text/plain") {
-        item.getAsString((text) => {
-          if (text.trim()) handleSendTextToClipboard(text);
-        });
-        return;
-      }
+    const images = imagesFromClipboard(e);
+    if (images.length) {
+      e.preventDefault();
+      stageImages(images);
+      return;
+    }
+
+    const text = e.clipboardData.getData("text/plain");
+    if (text?.trim()) {
+      e.preventDefault();
+      sendText(text)
+        .then(() => setRefreshMessages(true))
+        .catch((err) => console.error("Failed to send message to clipboard", err));
+    }
+  };
+
+  // Paste inside the textarea: stage images, let plain text paste natively.
+  const handleTextareaPaste = (e) => {
+    e.stopPropagation(); // don't also trigger the page-level quick-add
+    const images = imagesFromClipboard(e);
+    if (images.length) {
+      e.preventDefault(); // a textarea can't hold an image
+      stageImages(images);
     }
   };
 
@@ -91,8 +152,12 @@ export default function ClipboardPage() {
 
   const handleCopyImage = async (imageUrl, id) => {
     try {
+      // no-store: the <img> tag loads this same URL without an Origin header, so the
+      // browser caches a copy with no Access-Control-Allow-Origin. Reusing that cached
+      // response here would fail the CORS check, so always go to the network.
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${imageUrl}`, {
         credentials: "include",
+        cache: "no-store",
       });
       const blob = await response.blob();
       const clipboardItem = new ClipboardItem({ [blob.type]: blob });
@@ -161,22 +226,50 @@ export default function ClipboardPage() {
                 onKeyDown={(e) => {
                   if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                     e.preventDefault();
-                    handleSendTextToClipboard(textToSend);
+                    handleSend();
                   }
                 }}
-                onPaste={(e) => e.stopPropagation()}
+                onPaste={handleTextareaPaste}
               />
-              <div className="flex items-center justify-between border-t border-line pt-2">
-                <span className="font-mono text-[11px] text-faint">text · image</span>
+
+              {/* Staged image previews — nothing is uploaded until Send */}
+              {pendingImages.length > 0 && (
+                <div className="flex flex-wrap gap-2 border-t border-line px-2 pt-3">
+                  {pendingImages.map((img) => (
+                    <div key={img.id} className="relative animate-rise">
+                      <img
+                        src={img.url}
+                        alt="Attachment preview"
+                        className="h-16 w-16 rounded-lg border border-line object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePendingImage(img.id)}
+                        aria-label="Remove attachment"
+                        className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full border border-line bg-surface text-muted shadow-[var(--shadow)] transition-colors hover:border-accent hover:text-accent"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-3 flex items-center justify-between border-t border-line pt-2">
+                <span className="font-mono text-[11px] text-faint">
+                  {pendingImages.length > 0
+                    ? `${pendingImages.length} image${pendingImages.length === 1 ? "" : "s"} attached`
+                    : "text · image"}
+                </span>
                 <div className="flex items-center gap-1.5">
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleSendImageToClipboard(file);
+                      stageImages(Array.from(e.target.files ?? []));
                       e.target.value = "";
                     }}
                   />
@@ -191,11 +284,11 @@ export default function ClipboardPage() {
                   </TooltipWrapper>
                   <button
                     type="button"
-                    onClick={() => handleSendTextToClipboard(textToSend)}
-                    disabled={!textToSend.trim()}
+                    onClick={handleSend}
+                    disabled={sending || (!textToSend.trim() && pendingImages.length === 0)}
                     className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Send
+                    {sending ? "Sending…" : "Send"}
                     <SendHorizontal className="h-4 w-4" />
                   </button>
                 </div>
@@ -209,7 +302,7 @@ export default function ClipboardPage() {
                   <span className="blip-dot mb-4 h-2.5 w-2.5" />
                   <p className="text-sm text-muted">Nothing here yet.</p>
                   <p className="mt-1 text-xs text-faint">
-                    Paste anywhere on this page to add your first item.
+                    Paste text to add it instantly, or paste an image to attach it.
                   </p>
                 </div>
               ) : (
