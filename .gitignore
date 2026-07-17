@@ -63,6 +63,11 @@ var/
 wheels/
 share/python-wheels/
 *.egg-info/
+
+# The Python packaging rules above (build/, dist/, lib/, var/, share/, parts/…) are
+# unanchored, so they match at ANY depth — they silently swallowed frontend/src/lib/.
+# Keep them away from frontend source.
+!frontend/src/**
 .installed.cfg
 *.egg
 MANIFEST
