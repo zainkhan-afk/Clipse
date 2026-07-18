@@ -8,8 +8,18 @@ from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
 from api.clipboard.models import ContentType
 
 import uuid
-import shutil
-import os
+import vercel_blob
+
+
+def _delete_blob(url: str):
+    """Best-effort removal of an image blob. Ignores non-URL (legacy local) values
+    and never lets a storage/network error break the DB operation."""
+    if not url or not url.startswith("http"):
+        return
+    try:
+        vercel_blob.delete(url)
+    except Exception:
+        pass
 
 # ----------------------------
 # CREATE CLIPBOARD
@@ -90,8 +100,8 @@ def delete_all_messages(db: Session, clipboard_id: int):
         models.ClipboardData.clipboard_id == clipboard_id,
     ).all()
 
-    # Collect image files so they can be removed from disk after the rows are gone.
-    image_paths = [
+    # Collect image blobs so they can be removed from storage after the rows are gone.
+    image_urls = [
         message.content
         for message in messages
         if message.content_type == ContentType.image and message.content
@@ -102,9 +112,8 @@ def delete_all_messages(db: Session, clipboard_id: int):
     ).delete(synchronize_session=False)
     db.commit()
 
-    for path in image_paths:
-        if os.path.exists(path):
-            os.remove(path)
+    for url in image_urls:
+        _delete_blob(url)
 
     return {"detail": "All messages deleted successfully", "deleted": deleted_count}
 
@@ -192,15 +201,14 @@ def add_clipboard_data_text(db: Session, clipboard_id: int, message: ClipboardAd
 
 
 def add_clipboard_data_image(db: Session, clipboard_id: int, image: "UploadFile"):
-    filename = f"{uuid.uuid4()}_{image.filename}"
-    path = f"uploads/{filename}"
+    data = image.file.read()
+    path = f"clipboards/{clipboard_id}/{uuid.uuid4()}_{image.filename}"
 
-    with open(path, "wb") as f:
-        shutil.copyfileobj(image.file, f)
+    result = vercel_blob.put(path, data)
 
     msg = models.ClipboardData(
         clipboard_id=clipboard_id,
-        content=path,
+        content=result["url"],  # public blob URL, served directly by the frontend
         content_type="image",
         created_at=datetime.utcnow()
     )
@@ -219,11 +227,11 @@ def delete_message(db: Session, clipboard_id: int, message_id: int):
     
     
     if message:
-        image_path = None
+        image_url = None
         if message.content_type == ContentType.image:
-            image_path = message.content
+            image_url = message.content
         db.delete(message)
         db.commit()
-        if image_path:
-            os.remove(image_path)
+        if image_url:
+            _delete_blob(image_url)
         return {"detail": "Message deleted successfully"}

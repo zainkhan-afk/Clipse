@@ -152,13 +152,11 @@ export default function ClipboardPage() {
 
   const handleCopyImage = async (imageUrl, id) => {
     try {
-      // no-store: the <img> tag loads this same URL without an Origin header, so the
-      // browser caches a copy with no Access-Control-Allow-Origin. Reusing that cached
-      // response here would fail the CORS check, so always go to the network.
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${imageUrl}`, {
-        credentials: "include",
-        cache: "no-store",
-      });
+      // imageUrl is a public Vercel Blob URL (different origin). Fetch anonymously —
+      // no credentials, since the blob host serves permissive CORS for anonymous GETs
+      // but not credentialed ones. no-store avoids reusing the <img> tag's non-CORS
+      // cached response, which would fail the CORS read.
+      const response = await fetch(imageUrl, { cache: "no-store" });
       const blob = await response.blob();
       const clipboardItem = new ClipboardItem({ [blob.type]: blob });
       await navigator.clipboard.write([clipboardItem]);
@@ -323,7 +321,7 @@ export default function ClipboardPage() {
                             </p>
                           ) : (
                             <img
-                              src={`${process.env.NEXT_PUBLIC_API_URL}/${message.content}`}
+                              src={message.content}
                               alt="Clipboard image"
                               className="max-h-80 w-auto rounded-lg border border-line"
                             />
