@@ -16,6 +16,7 @@ from api.clipboard.service import get_clipboards \
                                 , delete_entire_clipboard \
                                 , get_clipboard_for_user \
                                 , update_clipboard \
+                                , get_clipboard_image \
                                 , create_clipboard
 
 router = APIRouter()
@@ -173,6 +174,16 @@ def clipboards(data: ClipboardCreateRequest, current_user=Depends(auth.get_curre
 def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     all_clipboard_data = get_all_current_clipboard_data(db, user_id=current_user.id, clipboard_id=slug)
     return all_clipboard_data
+
+
+@router.get("/images/{message_id}")
+def clipboard_image(message_id: int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    result = get_clipboard_image(db, current_user.id, message_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    content, media_type = result
+    return Response(content=content, media_type=media_type)
 
 
 @router.patch("/clipboards/{clipboard_id}")

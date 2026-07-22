@@ -150,17 +150,19 @@ export default function ClipboardPage() {
     navigator.clipboard.writeText(text).then(() => flashCopied(id));
   };
 
-  const handleCopyImage = async (imageUrl, id) => {
+  const handleCopyImage = async (messageId) => {
     try {
-      // imageUrl is a public Vercel Blob URL (different origin). Fetch anonymously —
-      // no credentials, since the blob host serves permissive CORS for anonymous GETs
-      // but not credentialed ones. no-store avoids reusing the <img> tag's non-CORS
-      // cached response, which would fail the CORS read.
-      const response = await fetch(imageUrl, { cache: "no-store" });
+      // Images live in a private blob store; fetch them through our authenticated
+      // proxy (cookie-auth, same-origin in prod). no-store avoids reusing the
+      // <img> tag's cached response.
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/images/${messageId}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
       const blob = await response.blob();
       const clipboardItem = new ClipboardItem({ [blob.type]: blob });
       await navigator.clipboard.write([clipboardItem]);
-      flashCopied(id);
+      flashCopied(messageId);
     } catch (err) {
       console.error("Failed to copy image:", err);
     }
@@ -321,7 +323,7 @@ export default function ClipboardPage() {
                             </p>
                           ) : (
                             <img
-                              src={message.content}
+                              src={`${process.env.NEXT_PUBLIC_API_URL}/images/${message.id}`}
                               alt="Clipboard image"
                               className="max-h-80 w-auto rounded-lg border border-line"
                             />
@@ -339,7 +341,7 @@ export default function ClipboardPage() {
                                 onClick={() =>
                                   isText
                                     ? handleCopyText(message.content, message.id)
-                                    : handleCopyImage(message.content, message.id)
+                                    : handleCopyImage(message.id)
                                 }
                                 className="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-raised hover:text-ink"
                               >

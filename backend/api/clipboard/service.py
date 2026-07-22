@@ -8,16 +8,16 @@ from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
 from api.clipboard.models import ContentType
 
 import uuid
-import vercel_blob
+from vercel import blob
 
 
-def _delete_blob(url: str):
-    """Best-effort removal of an image blob. Ignores non-URL (legacy local) values
-    and never lets a storage/network error break the DB operation."""
-    if not url or not url.startswith("http"):
+def _delete_blob(ref: str):
+    """Best-effort removal of an image blob by pathname (or URL). Never lets a
+    storage/network error break the DB operation."""
+    if not ref:
         return
     try:
-        vercel_blob.delete(url)
+        blob.delete(ref)
     except Exception:
         pass
 
@@ -101,7 +101,7 @@ def delete_all_messages(db: Session, clipboard_id: int):
     ).all()
 
     # Collect image blobs so they can be removed from storage after the rows are gone.
-    image_urls = [
+    image_refs = [
         message.content
         for message in messages
         if message.content_type == ContentType.image and message.content
@@ -112,8 +112,8 @@ def delete_all_messages(db: Session, clipboard_id: int):
     ).delete(synchronize_session=False)
     db.commit()
 
-    for url in image_urls:
-        _delete_blob(url)
+    for ref in image_refs:
+        _delete_blob(ref)
 
     return {"detail": "All messages deleted successfully", "deleted": deleted_count}
 
@@ -204,11 +204,13 @@ def add_clipboard_data_image(db: Session, clipboard_id: int, image: "UploadFile"
     data = image.file.read()
     path = f"clipboards/{clipboard_id}/{uuid.uuid4()}_{image.filename}"
 
-    result = vercel_blob.put(path, data)
+    # Private store: the blob URL is not publicly readable, so store the pathname
+    # and serve bytes back through the authenticated image proxy route.
+    result = blob.put(path, data, access="private")
 
     msg = models.ClipboardData(
         clipboard_id=clipboard_id,
-        content=result["url"],  # public blob URL, served directly by the frontend
+        content=result.pathname,
         content_type="image",
         created_at=datetime.utcnow()
     )
@@ -217,6 +219,22 @@ def add_clipboard_data_image(db: Session, clipboard_id: int, image: "UploadFile"
     db.commit()
     db.refresh(msg)
     return msg
+
+
+def get_clipboard_image(db: Session, user_id: int, message_id: int):
+    """Fetch a private image blob for an owned message. Returns (bytes, content_type)
+    or None if the message doesn't exist / isn't the user's / isn't an image."""
+    message = db.query(models.ClipboardData).join(models.Clipboard).filter(
+        models.ClipboardData.id == message_id,
+        models.Clipboard.user_id == user_id,
+        models.ClipboardData.content_type == ContentType.image,
+    ).first()
+
+    if not message:
+        return None
+
+    result = blob.get(message.content, access="private")
+    return result.content, (result.content_type or "application/octet-stream")
 
 
 def delete_message(db: Session, clipboard_id: int, message_id: int):
