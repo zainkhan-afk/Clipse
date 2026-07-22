@@ -18,7 +18,6 @@ export default function ClipboardAbout({ clipboard, count = 0 }) {
     : "—";
 
   const rows = [
-    { label: "ID", value: `#${clipboard.id}`, mono: true },
     { label: "Items", value: String(count), mono: true },
     { label: "Created", value: created },
   ];
