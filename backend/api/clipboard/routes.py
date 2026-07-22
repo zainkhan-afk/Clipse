@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response, Request, Cookie, status
 from sqlalchemy.orm import Session
 from api.clipboard import auth
@@ -17,6 +18,7 @@ from api.clipboard.service import get_clipboards \
                                 , get_clipboard_for_user \
                                 , update_clipboard \
                                 , get_clipboard_image \
+                                , purge_expired \
                                 , create_clipboard
 
 router = APIRouter()
@@ -174,6 +176,16 @@ def clipboards(data: ClipboardCreateRequest, current_user=Depends(auth.get_curre
 def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     all_clipboard_data = get_all_current_clipboard_data(db, user_id=current_user.id, clipboard_id=slug)
     return all_clipboard_data
+
+
+@router.get("/cron/cleanup")
+def cron_cleanup(request: Request, db: Session = Depends(auth.get_db)):
+    # Invoked by Vercel Cron. Vercel sends `Authorization: Bearer $CRON_SECRET`.
+    secret = os.environ.get("CRON_SECRET")
+    if not secret or request.headers.get("authorization") != f"Bearer {secret}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    return {"deleted": purge_expired(db)}
 
 
 @router.get("/images/{message_id}")
