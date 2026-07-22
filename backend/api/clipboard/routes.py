@@ -1,12 +1,24 @@
 import os
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Response, Request, Cookie, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from api.clipboard import auth
+from api.clipboard.emailer import send_verification_email
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
                                 , MeResponse, ClipboardsResponse\
                                 , CurrentClipboardData, ClipboardAddMessageRequest\
-                                , ClipboardCreateRequest, ClipboardUpdateRequest
-                                
+                                , ClipboardCreateRequest, ClipboardUpdateRequest\
+                                , ResendVerificationRequest
+
+
+BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "http://localhost:8000/clipboard")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+
+def _verify_url(token: str) -> str:
+    return f"{BACKEND_PUBLIC_URL}/auth/verify?token={token}"
+
+
 
 from api.clipboard.service import get_clipboards \
                                 , get_all_current_clipboard_data \
@@ -30,32 +42,56 @@ def clipboard_root():
 
 @router.post("/auth/register")
 def register(request: RegisterRequest, db: Session = Depends(auth.get_db)):
-    print(request)
     try:
         user = auth.register_user(db, request.email, request.password, request.first_name, request.last_name)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
-    verification_link = f"http://localhost:8000/clipboard/auth/verify?token={user.verification_token}"
-    return {"message": "Registered", "verification_link": verification_link}
+
+    try:
+        send_verification_email(user.email, user.first_name, _verify_url(user.verification_token))
+    except Exception:
+        # Account is created; the email just didn't go out. The client can offer
+        # "resend" so a transient SMTP hiccup or misconfig isn't a dead end.
+        raise HTTPException(
+            status_code=502,
+            detail="Account created, but the verification email failed to send. Try resending.",
+        )
+
+    return {"message": "Verification email sent", "email": user.email}
+
+
+@router.post("/auth/resend-verification")
+def resend_verification(request: ResendVerificationRequest, db: Session = Depends(auth.get_db)):
+    user = auth.get_user_by_email(db, request.email)
+    # Only act for a real, still-unverified account, but always return the same
+    # message so this can't be used to probe which emails are registered.
+    if user and not user.is_verified:
+        token = auth.create_email_verification_token(user.email)
+        user.verification_token = token
+        db.commit()
+        try:
+            send_verification_email(user.email, user.first_name, _verify_url(token))
+        except Exception:
+            pass
+    return {"message": "If that account exists and isn't verified yet, a new link is on its way."}
+
 
 @router.get("/auth/verify")
 def verify_email(token: str, db: Session = Depends(auth.get_db)):
     email = auth.verify_email_verification_token(token)
     if not email:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
-    
+        return RedirectResponse(f"{FRONTEND_URL}/login?verified=0", status_code=303)
+
     user = auth.get_user_by_email(db, email)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    if user.is_verified:
-        return {"message": "Email already verified"}
+        return RedirectResponse(f"{FRONTEND_URL}/login?verified=0", status_code=303)
 
-    user.is_verified = True
-    user.verification_token = None
-    db.commit()
-    return {"message": "Email verified successfully"}
+    if not user.is_verified:
+        user.is_verified = True
+        user.verification_token = None
+        db.commit()
+
+    return RedirectResponse(f"{FRONTEND_URL}/login?verified=1", status_code=303)
 
 @router.post("/auth/login")
 def login(request: LoginRequest, response: Response, db: Session = Depends(auth.get_db)):

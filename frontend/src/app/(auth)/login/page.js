@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { login } from "@/api/auth";
@@ -9,6 +9,13 @@ export default function Login() {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [verified, setVerified] = useState(null);
+
+  // Read the `verified` flag set by the backend's post-verification redirect.
+  useEffect(() => {
+    const flag = new URLSearchParams(window.location.search).get("verified");
+    if (flag === "1" || flag === "0") setVerified(flag);
+  }, []);
 
   async function handleLogin(e) {
     e?.preventDefault();
@@ -30,6 +37,17 @@ export default function Login() {
     <form onSubmit={handleLogin} className="w-full max-w-sm animate-rise">
       <h2 className="text-2xl">Welcome back</h2>
       <p className="mt-1.5 text-sm text-muted">Sign in to reach your clipboards.</p>
+
+      {verified === "1" && (
+        <p className="mt-6 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-600 dark:text-green-400">
+          Email verified — you can sign in now.
+        </p>
+      )}
+      {verified === "0" && (
+        <p className="mt-6 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-sm text-accent">
+          That verification link is invalid or expired. Try resending it from the sign-up page.
+        </p>
+      )}
 
       <div className="mt-8 flex flex-col gap-4">
         <Field

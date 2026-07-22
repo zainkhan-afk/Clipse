@@ -83,7 +83,7 @@ def create_refresh_token(data: dict):
     return jwt.encode(to_encode, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
 
 def create_email_verification_token(email: str):
-    expire = datetime.utcnow() + timedelta(minutes=30)
+    expire = datetime.utcnow() + timedelta(hours=24)
     to_encode = {"sub": email, "exp": expire}
     return jwt.encode(to_encode, EMAIL_VERIFY_SECRET_KEY, algorithm=ALGORITHM)
 
@@ -111,7 +111,7 @@ def register_user(db: Session, email: str, password: str, first_name: str, last_
         first_name = first_name,
         last_name = last_name,
         verification_token=verification_token,
-        is_verified=True,
+        is_verified=False,
     )
     db.add(new_user)
     db.commit()

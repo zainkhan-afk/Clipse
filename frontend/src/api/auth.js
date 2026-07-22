@@ -47,6 +47,14 @@ export const register = async (userData) => {
   return data;
 };
 
+// Resend the email verification link
+export const resendVerification = async (email) => {
+  return await apiFetch("/auth/resend-verification", {
+    method: "POST",
+    body: { email },
+  });
+};
+
 // Logout function
 export const logout = async () => {
   await apiFetch("/auth/logout", {
