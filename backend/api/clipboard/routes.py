@@ -120,29 +120,6 @@ def login(request: LoginRequest, response: Response, db: Session = Depends(auth.
     return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/auth/refresh")
-def refresh_token(
-    refresh_token: str,
-    db: Session = Depends(auth.get_db)
-):
-    if not refresh_token:
-        raise HTTPException(status_code=401, detail="Missing refresh token")
-
-    payload = auth.verify_refresh_token(refresh_token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
-
-    email = payload.get("sub")
-    user = auth.get_user_by_email(db, email)
-
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    new_access_token = auth.create_access_token({"sub": email})
-
-    return {"access_token": new_access_token}
-
-
-@router.post("/auth/refresh")
 def refresh(response: Response, refresh_token: str = Cookie(None)):
 
     if not refresh_token:
@@ -289,10 +266,14 @@ def add_clipboard_message(slug: int,
         db: Session = Depends(auth.get_db)
     ):
 
+    clipboard = get_clipboard_for_user(db, current_user.id, slug)
+    if not clipboard:
+        raise HTTPException(status_code=404, detail="Clipboard not found")
+
     if content_type == "text":
         if not content:
             raise HTTPException(400, "Text content is required")
-        
+
         content_message = ClipboardAddMessageRequest(content_type=content_type, content=content)
 
         new_message = add_clipboard_data_text(
@@ -311,10 +292,11 @@ def add_clipboard_message(slug: int,
             image=image,
         )
 
-
     else:
         raise HTTPException(400, "Invalid content type")
-    
+
+    return new_message.to_dict()
+
 
 @router.delete("/clipboards/{clipboard_id}/messages/{message_id}")
 def delete_clipboard_message(
@@ -324,12 +306,15 @@ def delete_clipboard_message(
         db: Session = Depends(auth.get_db),
     ):
 
+    clipboard = get_clipboard_for_user(db, current_user.id, clipboard_id)
+    if not clipboard:
+        raise HTTPException(status_code=404, detail="Clipboard not found")
 
     resp = delete_message(db, clipboard_id, message_id)
     if resp:
         return {"detail": "Message deleted successfully"}
     else:
-        raise HTTPException(400, "Invalid content type")
+        raise HTTPException(status_code=404, detail="Message not found")
 
 
 @router.delete("/clipboards/{clipboard_id}/messages")

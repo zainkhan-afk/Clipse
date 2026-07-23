@@ -299,7 +299,7 @@ export default function ClipboardPage() {
             <div className="min-h-0 flex-1 overflow-y-auto scroll-slim pr-1">
               {messages.length === 0 ? (
                 <div className="flex h-full min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong text-center">
-                  <span className="blip-dot mb-4 h-2.5 w-2.5" />
+                  <span className="ping-dot mb-4 h-2.5 w-2.5" />
                   <p className="text-sm text-muted">Nothing here yet.</p>
                   <p className="mt-1 text-xs text-faint">
                     Paste text to add it instantly, or paste an image to attach it.

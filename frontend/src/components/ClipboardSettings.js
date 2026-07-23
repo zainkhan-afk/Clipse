@@ -157,7 +157,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
   return (
     <div className="rounded-2xl border border-line bg-surface shadow-[var(--shadow)]">
       <div className="flex items-center gap-2 border-b border-line px-5 py-4">
-        <span className="blip-dot before:hidden after:hidden h-2 w-2" />
+        <span className="ping-dot before:hidden after:hidden h-2 w-2" />
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">Settings</h3>
       </div>
 

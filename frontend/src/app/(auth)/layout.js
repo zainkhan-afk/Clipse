@@ -25,7 +25,7 @@ export default function AuthLayout({ children }) {
               }}
             />
           ))}
-          <span className="blip-dot absolute h-3 w-3" />
+          <span className="ping-dot absolute h-3 w-3" />
         </div>
 
         <ClipseLogo />

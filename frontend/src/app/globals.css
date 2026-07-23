@@ -4,7 +4,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ------------------------------------------------------------------ *
- *  Design tokens — warm paper/ink minimalism with a vermilion "blip"  *
+ *  Design tokens — warm paper/ink minimalism with a vermilion accent  *
  * ------------------------------------------------------------------ */
 :root {
   --bg:            #f6f5f1;
@@ -109,8 +109,8 @@ body {
     border-radius: 999px;
   }
 
-  /* the "blip" — concentric radar ping */
-  .blip-dot {
+  /* the accent ping — concentric radar ring */
+  .ping-dot {
     position: relative;
     display: inline-block;
     width: 0.5rem;
@@ -118,7 +118,7 @@ body {
     border-radius: 999px;
     background: var(--accent);
   }
-  .blip-dot::after {
+  .ping-dot::after {
     content: "";
     position: absolute;
     inset: 0;
