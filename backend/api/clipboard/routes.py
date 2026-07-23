@@ -3,12 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, R
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from api.clipboard import auth
-from api.clipboard.emailer import send_verification_email
+from api.clipboard.emailer import send_verification_email, send_password_reset_email
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
                                 , MeResponse, ClipboardsResponse\
                                 , CurrentClipboardData, ClipboardAddMessageRequest\
                                 , ClipboardCreateRequest, ClipboardUpdateRequest\
-                                , ResendVerificationRequest
+                                , ResendVerificationRequest\
+                                , ForgotPasswordRequest, ResetPasswordRequest
 
 
 BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "http://localhost:8000")
@@ -88,6 +89,38 @@ def verify_email(token: str, db: Session = Depends(auth.get_db)):
         db.commit()
 
     return RedirectResponse(f"{FRONTEND_URL}/login?verified=1", status_code=303)
+
+
+@router.post("/auth/forgot-password")
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(auth.get_db)):
+    user = auth.get_user_by_email(db, request.email)
+    # Always return the same message so this can't be used to probe which emails
+    # are registered.
+    if user:
+        token = auth.create_password_reset_token(user.email)
+        reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
+        try:
+            send_password_reset_email(user.email, user.first_name, reset_url)
+        except Exception:
+            pass
+    return {"message": "If an account exists for that email, a reset link is on its way."}
+
+
+@router.post("/auth/reset-password")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(auth.get_db)):
+    email = auth.verify_password_reset_token(request.token)
+    if not email:
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+
+    user = auth.get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+
+    if len(request.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
+    auth.update_user_password(db, user, request.password)
+    return {"message": "Password updated. You can sign in now."}
 
 @router.post("/auth/login")
 def login(request: LoginRequest, response: Response, db: Session = Depends(auth.get_db)):

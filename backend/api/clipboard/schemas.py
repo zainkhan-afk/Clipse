@@ -14,6 +14,13 @@ class LoginRequest(BaseModel):
 class ResendVerificationRequest(BaseModel):
     email: EmailStr
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

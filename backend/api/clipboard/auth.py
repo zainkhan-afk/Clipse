@@ -16,6 +16,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_SECONDS = 60*60
 REFRESH_TOKEN_EXPIRE_SECONDS = 60*60*24*7
 REFRESH_SECRET_KEY = "CLIPBOARD_REFRESH_SECRET_KEY_SHOULD_BE_LONG"
+PASSWORD_RESET_SECRET_KEY = "CLIPBOARD_PASSWORD_RESET_SECRET_KEY_SHOULD_BE_LONG"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -69,6 +70,13 @@ def hash_password(password: str):
 def verify_password(password, hashed):
     return pwd_context.verify(password, hashed)
 
+def update_user_password(db: Session, user, new_password: str):
+    # Receiving the reset email proves control of the address, so also mark the
+    # account verified in case it never was.
+    user.password_hash = hash_password(new_password)
+    user.is_verified = True
+    db.commit()
+
 # JWT helpers
 def create_access_token(data: dict, expires_seconds=ACCESS_TOKEN_EXPIRE_SECONDS):
     to_encode = data.copy()
@@ -91,6 +99,18 @@ def verify_email_verification_token(token: str):
     from jose import JWTError, jwt
     try:
         payload = jwt.decode(token, EMAIL_VERIFY_SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub")
+    except JWTError:
+        return None
+
+def create_password_reset_token(email: str):
+    expire = datetime.utcnow() + timedelta(hours=1)
+    to_encode = {"sub": email, "exp": expire}
+    return jwt.encode(to_encode, PASSWORD_RESET_SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_password_reset_token(token: str):
+    try:
+        payload = jwt.decode(token, PASSWORD_RESET_SECRET_KEY, algorithms=[ALGORITHM])
         return payload.get("sub")
     except JWTError:
         return None

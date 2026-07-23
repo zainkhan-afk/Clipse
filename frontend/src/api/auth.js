@@ -55,6 +55,22 @@ export const resendVerification = async (email) => {
   });
 };
 
+// Request a password-reset link
+export const forgotPassword = async (email) => {
+  return await apiFetch("/auth/forgot-password", {
+    method: "POST",
+    body: { email },
+  });
+};
+
+// Set a new password using the token from the reset email
+export const resetPassword = async (token, password) => {
+  return await apiFetch("/auth/reset-password", {
+    method: "POST",
+    body: { token, password },
+  });
+};
+
 // Logout function
 export const logout = async () => {
   await apiFetch("/auth/logout", {
