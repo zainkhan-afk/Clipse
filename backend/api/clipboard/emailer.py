@@ -3,7 +3,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 
-APP_NAME = "Blip"
+APP_NAME = "Clipse"
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))

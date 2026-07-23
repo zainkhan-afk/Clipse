@@ -17,7 +17,7 @@ ACCESS_TOKEN_EXPIRE_SECONDS = 60*60
 REFRESH_TOKEN_EXPIRE_SECONDS = 60*60*24*7
 REFRESH_SECRET_KEY = "CLIPBOARD_REFRESH_SECRET_KEY_SHOULD_BE_LONG"
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/clipboard/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 

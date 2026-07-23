@@ -2,8 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import router as api_router
 
-# from api.notifications import notify
-
 app = FastAPI()
 app.include_router(api_router)
 

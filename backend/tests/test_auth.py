@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL = "http://localhost:8000/clipboard"
+BASE_URL = "http://localhost:8000"
 
 # ------------------------------
 # Step 1: Register a new user

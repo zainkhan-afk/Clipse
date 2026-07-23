@@ -17,7 +17,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
     root.classList.toggle("dark", next === "dark");
     try {
-      localStorage.setItem("blip-theme", next);
+      localStorage.setItem("clipse-theme", next);
     } catch {}
   };
 

@@ -11,7 +11,7 @@ from api.clipboard.schemas import RegisterRequest, LoginRequest\
                                 , ResendVerificationRequest
 
 
-BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "http://localhost:8000/clipboard")
+BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "http://localhost:8000")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 
@@ -35,10 +35,6 @@ from api.clipboard.service import get_clipboards \
 
 router = APIRouter()
 
-
-@router.get("/")
-def clipboard_root():
-    return {"clipboard-root" : "Working"}
 
 @router.post("/auth/register")
 def register(request: RegisterRequest, db: Session = Depends(auth.get_db)):

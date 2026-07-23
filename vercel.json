@@ -34,7 +34,7 @@
   ],
   "crons": [
     {
-      "path": "/api/backend/clipboard/cron/cleanup",
+      "path": "/api/backend/cron/cleanup",
       "schedule": "0 3 * * *"
     }
   ]
