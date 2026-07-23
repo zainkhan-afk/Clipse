@@ -1,8 +1,8 @@
-import BlipLogo from "@/components/BlipLogo";
+import ClipseLogo from "@/components/ClipseLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata = {
-  title: "Blip — sign in",
+  title: "Clipse — sign in",
   description: "A calm, minimal clipboard you can reach from any device.",
 };
 
@@ -25,10 +25,10 @@ export default function AuthLayout({ children }) {
               }}
             />
           ))}
-          <span className="blip-dot absolute h-3 w-3" />
+          <span className="ping-dot absolute h-3 w-3" />
         </div>
 
-        <BlipLogo />
+        <ClipseLogo />
 
         <div className="relative max-w-md">
           <h1 className="text-3xl font-semibold leading-tight tracking-tight">
@@ -37,7 +37,7 @@ export default function AuthLayout({ children }) {
             everywhere at once.
           </h1>
           <p className="mt-4 text-[15px] leading-relaxed text-muted">
-            Copy on one device, paste on another. Blip keeps your snippets and
+            Copy on one device, paste on another. Clipse keeps your snippets and
             images in sync — quietly, instantly.
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function AuthLayout({ children }) {
         </div>
 
         <div className="mb-8 lg:hidden">
-          <BlipLogo />
+          <ClipseLogo />
         </div>
 
         {children}

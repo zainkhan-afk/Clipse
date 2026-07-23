@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# run.sh — start the Blip backend (FastAPI) and frontend (Next.js) together.
+# run.sh — start the Clipse backend (FastAPI) and frontend (Next.js) together.
 # Ctrl+C stops both. Logs from both are streamed to this terminal.
 #
 set -euo pipefail
@@ -25,7 +25,7 @@ pids=()
 
 cleanup() {
   echo ""
-  echo "⏹  Stopping Blip..."
+  echo "⏹  Stopping Clipse..."
   for pid in "${pids[@]}"; do
     kill "$pid" 2>/dev/null || true
   done

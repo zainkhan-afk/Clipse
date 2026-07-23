@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import Sidebar from "./Sidebar";
-import BlipLogo from "./BlipLogo";
+import ClipseLogo from "./ClipseLogo";
 import ThemeToggle from "./ThemeToggle";
 
 export default function AppShell({ children }) {
@@ -20,7 +20,7 @@ export default function AppShell({ children }) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <BlipLogo showPing={false} />
+        <ClipseLogo showPing={false} />
         <ThemeToggle />
       </header>
 

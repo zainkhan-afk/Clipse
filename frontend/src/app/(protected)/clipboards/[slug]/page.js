@@ -150,19 +150,19 @@ export default function ClipboardPage() {
     navigator.clipboard.writeText(text).then(() => flashCopied(id));
   };
 
-  const handleCopyImage = async (imageUrl, id) => {
+  const handleCopyImage = async (messageId) => {
     try {
-      // no-store: the <img> tag loads this same URL without an Origin header, so the
-      // browser caches a copy with no Access-Control-Allow-Origin. Reusing that cached
-      // response here would fail the CORS check, so always go to the network.
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${imageUrl}`, {
+      // Images live in a private blob store; fetch them through our authenticated
+      // proxy (cookie-auth, same-origin in prod). no-store avoids reusing the
+      // <img> tag's cached response.
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/images/${messageId}`, {
         credentials: "include",
         cache: "no-store",
       });
       const blob = await response.blob();
       const clipboardItem = new ClipboardItem({ [blob.type]: blob });
       await navigator.clipboard.write([clipboardItem]);
-      flashCopied(id);
+      flashCopied(messageId);
     } catch (err) {
       console.error("Failed to copy image:", err);
     }
@@ -299,7 +299,7 @@ export default function ClipboardPage() {
             <div className="min-h-0 flex-1 overflow-y-auto scroll-slim pr-1">
               {messages.length === 0 ? (
                 <div className="flex h-full min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong text-center">
-                  <span className="blip-dot mb-4 h-2.5 w-2.5" />
+                  <span className="ping-dot mb-4 h-2.5 w-2.5" />
                   <p className="text-sm text-muted">Nothing here yet.</p>
                   <p className="mt-1 text-xs text-faint">
                     Paste text to add it instantly, or paste an image to attach it.
@@ -323,7 +323,7 @@ export default function ClipboardPage() {
                             </p>
                           ) : (
                             <img
-                              src={`${process.env.NEXT_PUBLIC_API_URL}/${message.content}`}
+                              src={`${process.env.NEXT_PUBLIC_API_URL}/images/${message.id}`}
                               alt="Clipboard image"
                               className="max-h-80 w-auto rounded-lg border border-line"
                             />
@@ -341,7 +341,7 @@ export default function ClipboardPage() {
                                 onClick={() =>
                                   isText
                                     ? handleCopyText(message.content, message.id)
-                                    : handleCopyImage(message.content, message.id)
+                                    : handleCopyImage(message.id)
                                 }
                                 className="grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-raised hover:text-ink"
                               >

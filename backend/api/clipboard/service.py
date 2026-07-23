@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from api.clipboard import models, auth
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
                                 , CurrentClipboardData, ClipboardAddMessageRequest
@@ -8,8 +9,26 @@ from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
 from api.clipboard.models import ContentType
 
 import uuid
-import shutil
-import os
+from vercel import blob
+
+
+def _delete_blob(ref: str):
+    """Best-effort removal of an image blob by pathname (or URL). Never lets a
+    storage/network error break the DB operation."""
+    if not ref:
+        return
+    try:
+        blob.delete(ref)
+    except Exception:
+        pass
+
+
+def _expiry_from(created_at: datetime, persistance):
+    """expires_at for an item, given a clipboard's persistance (seconds).
+    None/0 persistance means the item never expires."""
+    if persistance and persistance > 0:
+        return created_at + timedelta(seconds=persistance)
+    return None
 
 # ----------------------------
 # CREATE CLIPBOARD
@@ -78,7 +97,24 @@ def update_clipboard(db: Session, clipboard_id: int, data):
 
     db.commit()
     db.refresh(clipboard)
+
+    # A TTL change re-applies to every message that hasn't expired yet (already
+    # expired messages keep their past expires_at, so they stay gone — no resurrection).
+    if "persistance" in fields:
+        _reapply_persistance(db, clipboard)
+
     return clipboard
+
+
+def _reapply_persistance(db: Session, clipboard):
+    now = datetime.utcnow()
+    live = db.query(models.ClipboardData).filter(
+        models.ClipboardData.clipboard_id == clipboard.id,
+        or_(models.ClipboardData.expires_at.is_(None), models.ClipboardData.expires_at > now),
+    ).all()
+    for item in live:
+        item.expires_at = _expiry_from(item.created_at, clipboard.persistance)
+    db.commit()
 
 
 # ----------------------------
@@ -90,8 +126,8 @@ def delete_all_messages(db: Session, clipboard_id: int):
         models.ClipboardData.clipboard_id == clipboard_id,
     ).all()
 
-    # Collect image files so they can be removed from disk after the rows are gone.
-    image_paths = [
+    # Collect image blobs so they can be removed from storage after the rows are gone.
+    image_refs = [
         message.content
         for message in messages
         if message.content_type == ContentType.image and message.content
@@ -102,9 +138,8 @@ def delete_all_messages(db: Session, clipboard_id: int):
     ).delete(synchronize_session=False)
     db.commit()
 
-    for path in image_paths:
-        if os.path.exists(path):
-            os.remove(path)
+    for ref in image_refs:
+        _delete_blob(ref)
 
     return {"detail": "All messages deleted successfully", "deleted": deleted_count}
 
@@ -124,6 +159,35 @@ def delete_entire_clipboard(db: Session, clipboard_id: int):
     db.commit()
 
     return {"detail": "Clipboard deleted successfully"}
+
+# ----------------------------
+# EXPIRY CLEANUP (cron)
+# ----------------------------
+
+def purge_expired(db: Session):
+    """Permanently remove every message whose expires_at is in the past, and
+    clean up the blobs of any expired images. Safe to run repeatedly (idempotent)."""
+    now = datetime.utcnow()
+    expired = db.query(models.ClipboardData).filter(
+        models.ClipboardData.expires_at.isnot(None),
+        models.ClipboardData.expires_at < now,
+    ).all()
+
+    if not expired:
+        return 0
+
+    for item in expired:
+        if item.content_type == ContentType.image and item.content:
+            _delete_blob(item.content)
+
+    ids = [item.id for item in expired]
+    db.query(models.ClipboardData).filter(
+        models.ClipboardData.id.in_(ids)
+    ).delete(synchronize_session=False)
+    db.commit()
+
+    return len(ids)
+
 
 # ----------------------------
 # ADD DEVICE TO USER ACCOUNT
@@ -151,10 +215,12 @@ def get_all_current_clipboard_data(db: Session, user_id: int, clipboard_id: int)
         ).first()
     
     current_clipboard = ClipboardsResponse(**current_clipboard.to_dict())
-    
+
+    now = datetime.utcnow()
     current_clipboard_data = db.query(models.ClipboardData).join(models.Clipboard).filter(
             models.Clipboard.user_id == user_id,
             models.Clipboard.id == clipboard_id,
+            or_(models.ClipboardData.expires_at.is_(None), models.ClipboardData.expires_at > now),
         ).order_by(models.ClipboardData.created_at.desc()).all()
     
     current_clipboard_data = [ClipboardData(**cp_data.to_dict()) for cp_data in current_clipboard_data]
@@ -179,11 +245,14 @@ def get_clipboard_data(db: Session, user_id: int, clipboard_id: int):
 # ----------------------------
 
 def add_clipboard_data_text(db: Session, clipboard_id: int, message: ClipboardAddMessageRequest):
+    now = datetime.utcnow()
+    clipboard = db.query(models.Clipboard).filter(models.Clipboard.id == clipboard_id).first()
     data = models.ClipboardData(
         clipboard_id=clipboard_id,
         content=message.content,
         content_type = message.content_type,
-        created_at=datetime.utcnow()
+        created_at=now,
+        expires_at=_expiry_from(now, clipboard.persistance if clipboard else None),
     )
     db.add(data)
     db.commit()
@@ -192,23 +261,43 @@ def add_clipboard_data_text(db: Session, clipboard_id: int, message: ClipboardAd
 
 
 def add_clipboard_data_image(db: Session, clipboard_id: int, image: "UploadFile"):
-    filename = f"{uuid.uuid4()}_{image.filename}"
-    path = f"uploads/{filename}"
+    data = image.file.read()
+    path = f"clipboards/{clipboard_id}/{uuid.uuid4()}_{image.filename}"
 
-    with open(path, "wb") as f:
-        shutil.copyfileobj(image.file, f)
+    # Private store: the blob URL is not publicly readable, so store the pathname
+    # and serve bytes back through the authenticated image proxy route.
+    result = blob.put(path, data, access="private")
 
+    now = datetime.utcnow()
+    clipboard = db.query(models.Clipboard).filter(models.Clipboard.id == clipboard_id).first()
     msg = models.ClipboardData(
         clipboard_id=clipboard_id,
-        content=path,
+        content=result.pathname,
         content_type="image",
-        created_at=datetime.utcnow()
+        created_at=now,
+        expires_at=_expiry_from(now, clipboard.persistance if clipboard else None),
     )
 
     db.add(msg)
     db.commit()
     db.refresh(msg)
     return msg
+
+
+def get_clipboard_image(db: Session, user_id: int, message_id: int):
+    """Fetch a private image blob for an owned message. Returns (bytes, content_type)
+    or None if the message doesn't exist / isn't the user's / isn't an image."""
+    message = db.query(models.ClipboardData).join(models.Clipboard).filter(
+        models.ClipboardData.id == message_id,
+        models.Clipboard.user_id == user_id,
+        models.ClipboardData.content_type == ContentType.image,
+    ).first()
+
+    if not message:
+        return None
+
+    result = blob.get(message.content, access="private")
+    return result.content, (result.content_type or "application/octet-stream")
 
 
 def delete_message(db: Session, clipboard_id: int, message_id: int):
@@ -219,11 +308,11 @@ def delete_message(db: Session, clipboard_id: int, message_id: int):
     
     
     if message:
-        image_path = None
+        image_url = None
         if message.content_type == ContentType.image:
-            image_path = message.content
+            image_url = message.content
         db.delete(message)
         db.commit()
-        if image_path:
-            os.remove(image_path)
+        if image_url:
+            _delete_blob(image_url)
         return {"detail": "Message deleted successfully"}

@@ -66,6 +66,7 @@ class ClipboardData(Base):
     content_type = Column(Enum(ContentType, name="content_type_enum"), nullable=False)
     content = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)  # NULL = never expires
 
     clipboard = relationship("Clipboard", back_populates="data")
 

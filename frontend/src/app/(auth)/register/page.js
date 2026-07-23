@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
-import { register } from "@/api/auth";
+import { ArrowRight, MailCheck } from "lucide-react";
+import { register, resendVerification } from "@/api/auth";
 
 export default function Register() {
   const router = useRouter();
@@ -14,19 +14,18 @@ export default function Register() {
   });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sentTo, setSentTo] = useState("");
+  const [resendMsg, setResendMsg] = useState("");
+  const [resending, setResending] = useState(false);
 
   async function handleRegistration(e) {
     e?.preventDefault();
     setError("");
     setBusy(true);
     try {
-      const data = await register(registrationData);
-      if (data.access_token) {
-        router.push("/dashboard");
-      } else {
-        // Registration succeeded but no session yet — send them to sign in.
-        router.push("/login");
-      }
+      await register(registrationData);
+      // Account created; user must confirm their email before they can sign in.
+      setSentTo(registrationData.email);
     } catch (err) {
       setError(err.message || "Unable to create account.");
     } finally {
@@ -34,7 +33,62 @@ export default function Register() {
     }
   }
 
+  async function handleResend() {
+    setResendMsg("");
+    setResending(true);
+    try {
+      const data = await resendVerification(sentTo);
+      setResendMsg(data?.message || "Verification email sent.");
+    } catch (err) {
+      setResendMsg(err.message || "Couldn't resend right now.");
+    } finally {
+      setResending(false);
+    }
+  }
+
   const set = (key) => (v) => setRegistrationData({ ...registrationData, [key]: v });
+
+  if (sentTo) {
+    return (
+      <div className="w-full max-w-sm animate-rise text-center">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-accent-soft text-accent">
+          <MailCheck className="h-6 w-6" />
+        </span>
+        <h2 className="mt-5 text-2xl">Check your inbox</h2>
+        <p className="mt-2 text-sm text-muted">
+          We sent a verification link to{" "}
+          <span className="font-medium text-ink">{sentTo}</span>. Click it to activate your
+          account, then sign in. The link expires in 24 hours.
+        </p>
+
+        {resendMsg && (
+          <p className="mt-4 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-muted">
+            {resendMsg}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resending}
+          className="mt-6 w-full rounded-xl border border-line px-4 py-3 text-sm font-medium text-ink transition-colors hover:border-line-strong disabled:opacity-60"
+        >
+          {resending ? "Sending…" : "Resend email"}
+        </button>
+
+        <p className="mt-6 text-sm text-muted">
+          Already verified?{" "}
+          <button
+            type="button"
+            onClick={() => router.push("/login")}
+            className="font-medium text-ink underline-offset-4 hover:text-accent hover:underline"
+          >
+            Sign in
+          </button>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleRegistration} className="w-full max-w-sm animate-rise">

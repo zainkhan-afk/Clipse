@@ -7,7 +7,7 @@ import { Check, Trash2, Eraser, Save } from "lucide-react";
 import ConfirmDialog from "./ConfirmDialog";
 import { useClipboards } from "@/context/ClipboardContext";
 import { updateClipboard, deleteClipboard, clearClipboard } from "@/api/clipboard";
-import { TTL_PRESETS, TTL_UNITS, isPreset, splitCustom } from "@/lib/ttl";
+import { TTL_PRESETS, TTL_UNITS, isPreset, splitCustom, formatTTL } from "@/lib/ttl";
 
 const COLORS = ["#e8472a", "#e0982e", "#3aa675", "#3b82f6", "#8b5cf6", "#ec4899"];
 
@@ -29,6 +29,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
   const [confirm, setConfirm] = useState(null); // "delete" | "clear" | null
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [ttlConfirmOpen, setTtlConfirmOpen] = useState(false);
 
   // Sync form whenever a different clipboard loads (keyed on id so user edits
   // aren't clobbered by background refreshes of the same clipboard).
@@ -71,6 +72,28 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
       currentSeconds !== (clipboard.persistance ?? 0));
 
   const canSave = changed && !nameError && !saving;
+
+  // A TTL change is "destructive" when the new retention is shorter than the saved
+  // one (or a limit is set on a previously-forever clipboard): it retroactively
+  // removes messages older than the new limit. 0 = forever.
+  const savedSeconds = clipboard?.persistance ?? 0;
+  const ttlMoreRestrictive =
+    currentSeconds > 0 && (savedSeconds === 0 || currentSeconds < savedSeconds);
+  const needsTtlWarning = ttlMoreRestrictive && count > 0;
+
+  function onSaveClick() {
+    if (!canSave) return;
+    if (needsTtlWarning) {
+      setTtlConfirmOpen(true);
+    } else {
+      handleSave();
+    }
+  }
+
+  async function confirmTtlAndSave() {
+    setTtlConfirmOpen(false);
+    await handleSave();
+  }
 
   async function handleSave() {
     if (!canSave) return;
@@ -134,7 +157,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
   return (
     <div className="rounded-2xl border border-line bg-surface shadow-[var(--shadow)]">
       <div className="flex items-center gap-2 border-b border-line px-5 py-4">
-        <span className="blip-dot before:hidden after:hidden h-2 w-2" />
+        <span className="ping-dot before:hidden after:hidden h-2 w-2" />
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">Settings</h3>
       </div>
 
@@ -242,7 +265,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
 
         <button
           type="button"
-          onClick={handleSave}
+          onClick={onSaveClick}
           disabled={!canSave}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
@@ -307,6 +330,15 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
         title="Delete this clipboard?"
         message={`"${clipboard.name}" and everything in it will be permanently deleted. This cannot be undone.`}
         confirmLabel="Delete clipboard"
+      />
+      <ConfirmDialog
+        isOpen={ttlConfirmOpen}
+        onClose={() => setTtlConfirmOpen(false)}
+        onConfirm={confirmTtlAndSave}
+        busy={saving}
+        title="Shorten retention?"
+        message={`Messages in "${clipboard.name}" older than ${formatTTL(currentSeconds)} will be removed and can't be recovered. New items expire ${formatTTL(currentSeconds)} after they're added.`}
+        confirmLabel="Save changes"
       />
     </div>
   );

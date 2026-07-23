@@ -15,12 +15,12 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata = {
-  title: "Blip — shared clipboard",
+  title: "Clipse — shared clipboard",
   description: "A calm, minimal clipboard you can reach from any device.",
 };
 
 // Applies the saved/system theme before first paint to avoid a flash of the wrong theme.
-const themeScript = `(function(){try{var t=localStorage.getItem('blip-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem('clipse-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`;
 
 export default function RootLayout({ children }) {
   return (

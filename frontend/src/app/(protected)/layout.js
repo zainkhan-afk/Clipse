@@ -3,7 +3,7 @@ import { UserProvider } from "@/context/UserContext";
 import { ClipboardsProvider } from "@/context/ClipboardContext";
 
 export const metadata = {
-  title: "Blip",
+  title: "Clipse",
   description: "A calm, minimal clipboard you can reach from any device.",
 };
 

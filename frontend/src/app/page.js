@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import BlipLogo from "@/components/BlipLogo";
+import ClipseLogo from "@/components/ClipseLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
@@ -23,7 +23,7 @@ export default function Home() {
       </div>
 
       <header className="relative flex items-center justify-between px-6 py-5 sm:px-10">
-        <BlipLogo />
+        <ClipseLogo />
         <ThemeToggle />
       </header>
 
@@ -35,7 +35,7 @@ export default function Home() {
           all your devices.
         </h1>
         <p className="mt-5 max-w-md text-[15px] leading-relaxed text-muted">
-          Blip keeps your text and images in sync across everything you own. Copy here, paste
+          Clipse keeps your text and images in sync across everything you own. Copy here, paste
           there — no cables, no fuss.
         </p>
 
@@ -44,7 +44,7 @@ export default function Home() {
             href="/dashboard"
             className="group flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
           >
-            Open Blip
+            Open Clipse
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <Link
@@ -57,7 +57,7 @@ export default function Home() {
       </main>
 
       <footer className="relative px-6 py-6 text-center font-mono text-xs text-faint">
-        blip — shared clipboard
+        clipse — shared clipboard
       </footer>
     </div>
   );

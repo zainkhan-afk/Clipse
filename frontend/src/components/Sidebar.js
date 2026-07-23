@@ -15,7 +15,7 @@ import {
 import Link from "next/link";
 import CreateNewClipboardModal from "./modals/CreateNewClipboard";
 import TooltipWrapper from "./primitives/TooltipWrapper";
-import BlipLogo from "./BlipLogo";
+import ClipseLogo from "./ClipseLogo";
 import ThemeToggle from "./ThemeToggle";
 import { logout } from "@/api/auth";
 import { useUser } from "@/context/UserContext";
@@ -97,7 +97,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
     >
       {/* Header */}
       <div className="flex h-16 items-center justify-between px-5">
-        <BlipLogo href="/dashboard" />
+        <ClipseLogo href="/dashboard" />
         <button
           type="button"
           onClick={onClose}
