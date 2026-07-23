@@ -202,7 +202,14 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
               <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-faint">
                 Account
               </div>
-              <button className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-ink transition-colors hover:bg-raised">
+              <button
+                onClick={() => {
+                  setUserSettingsOpen(false);
+                  onClose();
+                  router.push("/settings");
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-sm text-ink transition-colors hover:bg-raised"
+              >
                 <Settings className="h-4 w-4 text-muted" />
                 Settings
               </button>

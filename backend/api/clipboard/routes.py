@@ -9,7 +9,8 @@ from api.clipboard.schemas import RegisterRequest, LoginRequest\
                                 , CurrentClipboardData, ClipboardAddMessageRequest\
                                 , ClipboardCreateRequest, ClipboardUpdateRequest\
                                 , ResendVerificationRequest\
-                                , ForgotPasswordRequest, ResetPasswordRequest
+                                , ForgotPasswordRequest, ResetPasswordRequest\
+                                , UpdateProfileRequest, ChangePasswordRequest
 
 
 BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "http://localhost:8000")
@@ -32,6 +33,7 @@ from api.clipboard.service import get_clipboards \
                                 , update_clipboard \
                                 , get_clipboard_image \
                                 , purge_expired \
+                                , delete_user_account \
                                 , create_clipboard
 
 router = APIRouter()
@@ -183,14 +185,58 @@ def refresh(response: Response, refresh_token: str = Cookie(None)):
 @router.get("/auth/me", response_model=MeResponse)
 def me(current_user=Depends(auth.get_current_user)):
     user_data = MeResponse(
-                        id=current_user.id, 
-                        email=current_user.email, 
+                        id=current_user.id,
+                        email=current_user.email,
                         first_name=current_user.first_name,
                         last_name=current_user.last_name,
                         is_verified=current_user.is_verified
                       )
-    
+
     return user_data
+
+
+@router.patch("/auth/me", response_model=MeResponse)
+def update_me(data: UpdateProfileRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    fields = data.model_dump(exclude_unset=True)
+
+    if "first_name" in fields:
+        first_name = (fields["first_name"] or "").strip()
+        if not first_name:
+            raise HTTPException(status_code=400, detail="First name can't be empty")
+        current_user.first_name = first_name
+
+    if "last_name" in fields:
+        current_user.last_name = (fields["last_name"] or "").strip() or None
+
+    db.commit()
+    db.refresh(current_user)
+    return MeResponse(
+        id=current_user.id,
+        email=current_user.email,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        is_verified=current_user.is_verified,
+    )
+
+
+@router.post("/auth/change-password")
+def change_password(data: ChangePasswordRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    if not auth.verify_password(data.current_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
+    current_user.password_hash = auth.hash_password(data.new_password)
+    db.commit()
+    return {"message": "Password changed"}
+
+
+@router.delete("/auth/me")
+def delete_me(response: Response, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    result = delete_user_account(db, current_user.id)
+    response.delete_cookie(key="access_token", path="/", samesite="none", secure=True)
+    response.delete_cookie(key="refresh_token", path="/", samesite="none", secure=True)
+    return result
 
 
 @router.get("/clipboards", response_model=list[ClipboardsResponse])

@@ -1,30 +1,66 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 
-const ThemeContext = createContext({ theme: "light", toggle: () => {} });
+const ThemeContext = createContext({
+  theme: "light",
+  preference: "system",
+  toggle: () => {},
+  setPreference: () => {},
+});
+
+function systemPrefersDark() {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function resolve(preference) {
+  if (preference === "dark") return "dark";
+  if (preference === "light") return "light";
+  return systemPrefersDark() ? "dark" : "light"; // "system"
+}
 
 export function ThemeProvider({ children }) {
-  // Initialise from the class the pre-paint script already applied (avoids flash).
+  // `preference` is what the user picked; `theme` is what's actually applied.
+  const [preference, setPreferenceState] = useState("system");
   const [theme, setTheme] = useState("light");
 
+  // Initialise from the stored preference (the pre-paint script already set the class).
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setTheme(isDark ? "dark" : "light");
+    let stored = "system";
+    try {
+      stored = localStorage.getItem("clipse-theme") || "system";
+    } catch {}
+    setPreferenceState(stored);
+    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
   }, []);
 
-  const apply = (next) => {
-    setTheme(next);
-    const root = document.documentElement;
-    root.classList.toggle("dark", next === "dark");
+  // While following the OS, react to system theme changes live.
+  useEffect(() => {
+    if (preference !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => {
+      const next = mq.matches ? "dark" : "light";
+      setTheme(next);
+      document.documentElement.classList.toggle("dark", next === "dark");
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [preference]);
+
+  const setPreference = (next) => {
+    setPreferenceState(next);
+    const resolved = resolve(next);
+    setTheme(resolved);
+    document.documentElement.classList.toggle("dark", resolved === "dark");
     try {
       localStorage.setItem("clipse-theme", next);
     } catch {}
   };
 
-  const toggle = () => apply(theme === "dark" ? "light" : "dark");
+  // Toggle picks an explicit light/dark (leaves "system" behind by design).
+  const toggle = () => setPreference(theme === "dark" ? "light" : "dark");
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle, setTheme: apply }}>
+    <ThemeContext.Provider value={{ theme, preference, toggle, setPreference }}>
       {children}
     </ThemeContext.Provider>
   );

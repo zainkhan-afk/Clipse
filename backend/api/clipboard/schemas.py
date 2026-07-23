@@ -21,6 +21,14 @@ class ResetPasswordRequest(BaseModel):
     token: str
     password: str
 
+class UpdateProfileRequest(BaseModel):
+    first_name: str | None = None
+    last_name: str | None = None
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

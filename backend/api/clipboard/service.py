@@ -143,6 +143,21 @@ def delete_all_messages(db: Session, clipboard_id: int):
 
     return {"detail": "All messages deleted successfully", "deleted": deleted_count}
 
+def delete_user_account(db: Session, user_id: int):
+    """Delete a user and everything they own: clipboards, their messages, image
+    blobs (best-effort, inside delete_entire_clipboard), and devices."""
+    clipboards = db.query(models.Clipboard).filter(models.Clipboard.user_id == user_id).all()
+    for clipboard in clipboards:
+        delete_entire_clipboard(db, clipboard.id)
+
+    db.query(models.Device).filter(models.Device.user_id == user_id).delete(synchronize_session=False)
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user:
+        db.delete(user)
+    db.commit()
+    return {"detail": "Account deleted"}
+
 def delete_entire_clipboard(db: Session, clipboard_id: int):
     clipboard = db.query(models.Clipboard).filter(
         models.Clipboard.id == clipboard_id,

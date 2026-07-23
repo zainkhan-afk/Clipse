@@ -71,6 +71,29 @@ export const resetPassword = async (token, password) => {
   });
 };
 
+// Update profile (first/last name)
+export const updateProfile = async (data) => {
+  return await apiFetch("/auth/me", {
+    method: "PATCH",
+    body: data,
+  });
+};
+
+// Change password while logged in (verifies the current password)
+export const changePassword = async (current_password, new_password) => {
+  return await apiFetch("/auth/change-password", {
+    method: "POST",
+    body: { current_password, new_password },
+  });
+};
+
+// Permanently delete the account and everything in it
+export const deleteAccount = async () => {
+  return await apiFetch("/auth/me", {
+    method: "DELETE",
+  });
+};
+
 // Logout function
 export const logout = async () => {
   await apiFetch("/auth/logout", {
