@@ -47,3 +47,22 @@ def send_verification_email(to: str, first_name: str, verify_url: str):
   <p style="color:#aaa;font-size:12px;margin:12px 0 0;word-break:break-all">{verify_url}</p>
 </div>"""
     send_email(to, subject, text, html)
+
+
+def send_password_reset_email(to: str, first_name: str, reset_url: str):
+    name = first_name or "there"
+    subject = f"Reset your {APP_NAME} password"
+    text = (
+        f"Hi {name},\n\n"
+        f"We got a request to reset your {APP_NAME} password. Choose a new one here:\n{reset_url}\n\n"
+        "This link expires in 1 hour. If you didn't request this, you can safely ignore this email."
+    )
+    html = f"""\
+<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1a1a1a">
+  <h2 style="margin:0 0 8px">Reset your password</h2>
+  <p style="color:#555;margin:0 0 20px">Hi {name}, tap the button below to choose a new {APP_NAME} password.</p>
+  <a href="{reset_url}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600">Reset password</a>
+  <p style="color:#888;font-size:13px;margin:20px 0 0">This link expires in 1 hour. If you didn't request this, ignore this email.</p>
+  <p style="color:#aaa;font-size:12px;margin:12px 0 0;word-break:break-all">{reset_url}</p>
+</div>"""
+    send_email(to, subject, text, html)

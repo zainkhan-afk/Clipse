@@ -10,11 +10,15 @@ export default function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [verified, setVerified] = useState(null);
+  const [reset, setReset] = useState(false);
 
-  // Read the `verified` flag set by the backend's post-verification redirect.
+  // Read flags set by redirects: `verified` (post email-verification) and
+  // `reset` (after a successful password reset).
   useEffect(() => {
-    const flag = new URLSearchParams(window.location.search).get("verified");
+    const params = new URLSearchParams(window.location.search);
+    const flag = params.get("verified");
     if (flag === "1" || flag === "0") setVerified(flag);
+    if (params.get("reset") === "1") setReset(true);
   }, []);
 
   async function handleLogin(e) {
@@ -48,6 +52,11 @@ export default function Login() {
           That verification link is invalid or expired. Try resending it from the sign-up page.
         </p>
       )}
+      {reset && (
+        <p className="mt-6 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-600 dark:text-green-400">
+          Password updated — sign in with your new password.
+        </p>
+      )}
 
       <div className="mt-8 flex flex-col gap-4">
         <Field
@@ -66,6 +75,13 @@ export default function Login() {
           value={loginData.password}
           onChange={(v) => setLoginData({ ...loginData, password: v })}
         />
+        <button
+          type="button"
+          onClick={() => router.push("/forgot-password")}
+          className="-mt-1 self-end text-xs font-medium text-muted underline-offset-4 hover:text-accent hover:underline"
+        >
+          Forgot password?
+        </button>
       </div>
 
       {error && (

@@ -3,12 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, R
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from api.clipboard import auth
-from api.clipboard.emailer import send_verification_email
+from api.clipboard.emailer import send_verification_email, send_password_reset_email
 from api.clipboard.schemas import RegisterRequest, LoginRequest\
                                 , MeResponse, ClipboardsResponse\
                                 , CurrentClipboardData, ClipboardAddMessageRequest\
                                 , ClipboardCreateRequest, ClipboardUpdateRequest\
-                                , ResendVerificationRequest
+                                , ResendVerificationRequest\
+                                , ForgotPasswordRequest, ResetPasswordRequest\
+                                , UpdateProfileRequest, ChangePasswordRequest
 
 
 BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "http://localhost:8000")
@@ -31,6 +33,7 @@ from api.clipboard.service import get_clipboards \
                                 , update_clipboard \
                                 , get_clipboard_image \
                                 , purge_expired \
+                                , delete_user_account \
                                 , create_clipboard
 
 router = APIRouter()
@@ -88,6 +91,38 @@ def verify_email(token: str, db: Session = Depends(auth.get_db)):
         db.commit()
 
     return RedirectResponse(f"{FRONTEND_URL}/login?verified=1", status_code=303)
+
+
+@router.post("/auth/forgot-password")
+def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(auth.get_db)):
+    user = auth.get_user_by_email(db, request.email)
+    # Always return the same message so this can't be used to probe which emails
+    # are registered.
+    if user:
+        token = auth.create_password_reset_token(user.email)
+        reset_url = f"{FRONTEND_URL}/reset-password?token={token}"
+        try:
+            send_password_reset_email(user.email, user.first_name, reset_url)
+        except Exception:
+            pass
+    return {"message": "If an account exists for that email, a reset link is on its way."}
+
+
+@router.post("/auth/reset-password")
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(auth.get_db)):
+    email = auth.verify_password_reset_token(request.token)
+    if not email:
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+
+    user = auth.get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+
+    if len(request.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
+    auth.update_user_password(db, user, request.password)
+    return {"message": "Password updated. You can sign in now."}
 
 @router.post("/auth/login")
 def login(request: LoginRequest, response: Response, db: Session = Depends(auth.get_db)):
@@ -150,14 +185,58 @@ def refresh(response: Response, refresh_token: str = Cookie(None)):
 @router.get("/auth/me", response_model=MeResponse)
 def me(current_user=Depends(auth.get_current_user)):
     user_data = MeResponse(
-                        id=current_user.id, 
-                        email=current_user.email, 
+                        id=current_user.id,
+                        email=current_user.email,
                         first_name=current_user.first_name,
                         last_name=current_user.last_name,
                         is_verified=current_user.is_verified
                       )
-    
+
     return user_data
+
+
+@router.patch("/auth/me", response_model=MeResponse)
+def update_me(data: UpdateProfileRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    fields = data.model_dump(exclude_unset=True)
+
+    if "first_name" in fields:
+        first_name = (fields["first_name"] or "").strip()
+        if not first_name:
+            raise HTTPException(status_code=400, detail="First name can't be empty")
+        current_user.first_name = first_name
+
+    if "last_name" in fields:
+        current_user.last_name = (fields["last_name"] or "").strip() or None
+
+    db.commit()
+    db.refresh(current_user)
+    return MeResponse(
+        id=current_user.id,
+        email=current_user.email,
+        first_name=current_user.first_name,
+        last_name=current_user.last_name,
+        is_verified=current_user.is_verified,
+    )
+
+
+@router.post("/auth/change-password")
+def change_password(data: ChangePasswordRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    if not auth.verify_password(data.current_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
+    current_user.password_hash = auth.hash_password(data.new_password)
+    db.commit()
+    return {"message": "Password changed"}
+
+
+@router.delete("/auth/me")
+def delete_me(response: Response, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    result = delete_user_account(db, current_user.id)
+    response.delete_cookie(key="access_token", path="/", samesite="none", secure=True)
+    response.delete_cookie(key="refresh_token", path="/", samesite="none", secure=True)
+    return result
 
 
 @router.get("/clipboards", response_model=list[ClipboardsResponse])

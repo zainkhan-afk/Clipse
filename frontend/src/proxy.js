@@ -6,7 +6,12 @@ export function proxy(req) {
   const { pathname } = req.nextUrl;
 
   // Protect dashboard/settings
-  if (!token && (pathname.startsWith("/dashboard") || pathname.startsWith("/clipboards"))) {
+  if (
+    !token &&
+    (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/clipboards") ||
+      pathname.startsWith("/settings"))
+  ) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
