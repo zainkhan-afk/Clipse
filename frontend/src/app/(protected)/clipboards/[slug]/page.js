@@ -9,6 +9,7 @@ import ClipboardSettings from "@/components/ClipboardSettings";
 import DeleteMessageConfirmationModal from "@/components/modals/DeleteMessage";
 
 import { getClipboardData, sendToClipboard, deleteMessage } from "@/api/clipboard";
+import { parseServerDate } from "@/lib/datetime";
 
 export default function ClipboardPage() {
   const params = useParams();
@@ -333,7 +334,7 @@ export default function ClipboardPage() {
                         <div className="flex items-center justify-between border-t border-line bg-raised/40 px-4 py-2">
                           <span className="flex items-center gap-1.5 font-mono text-[11px] text-faint">
                             {isText ? <Type className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
-                            {formatter.format(new Date(message.created_at))}
+                            {formatter.format(parseServerDate(message.created_at))}
                           </span>
                           <div className="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100">
                             <TooltipWrapper label={copied ? "Copied!" : "Copy"}>

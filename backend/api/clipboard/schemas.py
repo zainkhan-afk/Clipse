@@ -1,5 +1,17 @@
-from pydantic import BaseModel, EmailStr
-from datetime import datetime
+from pydantic import BaseModel, EmailStr, AfterValidator
+from datetime import datetime, timezone
+from typing import Annotated
+
+
+def _as_utc(value: datetime | None):
+    """Stored timestamps are naive UTC; tag them as UTC so they serialize with a
+    +00:00 offset and clients don't misread them as local time."""
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+UtcDatetime = Annotated[datetime, AfterValidator(_as_utc)]
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -46,13 +58,13 @@ class ClipboardsResponse(BaseModel):
     name: str
     persistance: int|None
     color: str|None = None
-    created_at: datetime|None = None
+    created_at: UtcDatetime|None = None
 
 class ClipboardData(BaseModel):
     id: int
     content_type: str
     content: str
-    created_at: datetime
+    created_at: UtcDatetime
 
 class CurrentClipboardData(BaseModel):
     clipboard: ClipboardsResponse

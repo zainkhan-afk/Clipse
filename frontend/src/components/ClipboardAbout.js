@@ -1,4 +1,5 @@
 "use client";
+import { parseServerDate } from "@/lib/datetime";
 
 export default function ClipboardAbout({ clipboard, count = 0 }) {
   if (!clipboard) {
@@ -13,7 +14,7 @@ export default function ClipboardAbout({ clipboard, count = 0 }) {
 
   const created = clipboard.created_at
     ? new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(
-        new Date(clipboard.created_at)
+        parseServerDate(clipboard.created_at)
       )
     : "—";
 
