@@ -3,22 +3,52 @@ import { ArrowRight } from "lucide-react";
 import ClipseLogo from "@/components/ClipseLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 
+// Faint "copy → paste" marks for the hero backdrop, replacing the old radar rings.
+// Each is a clipboard card with an offset duplicate behind it — the universal copy
+// glyph — placed to frame the hero (not sit behind the headline), one picked out in
+// the vermilion accent. They drift gently (see .copy-mark in globals.css).
+const COPY_MARKS = [
+  { left: "8%", top: "24%", size: 118, rot: -11, opacity: 0.75, accent: false },
+  { left: "82%", top: "16%", size: 84, rot: 9, opacity: 0.9, accent: true },
+  { left: "87%", top: "60%", size: 150, rot: -6, opacity: 0.6, accent: false },
+  { left: "13%", top: "70%", size: 100, rot: 8, opacity: 0.7, accent: false },
+  { left: "49%", top: "88%", size: 66, rot: -9, opacity: 0.5, accent: false },
+];
+
 export default function Home() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg text-ink">
-      {/* concentric rings backdrop */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
+      {/* copy → paste marks: a card and its offset duplicate — the clipboard-copy
+          glyph — framing the hero (replaces the old radar rings) */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {COPY_MARKS.map((m, i) => (
           <div
             key={i}
-            className="absolute rounded-full border border-line"
+            className="copy-mark absolute"
             style={{
-              width: `${(i + 1) * 180}px`,
-              height: `${(i + 1) * 180}px`,
-              left: `${-(i + 1) * 90}px`,
-              top: `${-(i + 1) * 90}px`,
+              left: m.left,
+              top: m.top,
+              width: m.size,
+              height: m.size,
+              opacity: m.opacity,
+              animationDelay: `${i * -1.9}s`,
             }}
-          />
+          >
+            <div className="h-full w-full" style={{ transform: `rotate(${m.rot}deg)` }}>
+              {/* back card (the source), peeking out top-left */}
+              <div
+                className="absolute inset-0 rounded-[24%] border border-line"
+                style={{ transform: "translate(-15%, -15%)" }}
+              />
+              {/* front card (the duplicate) — filled with the page bg so it occludes
+                  the back into the familiar copy glyph */}
+              <div
+                className={`absolute inset-0 rounded-[24%] border bg-bg ${
+                  m.accent ? "border-accent/60" : "border-line"
+                }`}
+              />
+            </div>
+          </div>
         ))}
       </div>
 
