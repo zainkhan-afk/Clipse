@@ -5,6 +5,8 @@ and reach them from any signed-in device — copy here, paste there.
 
 Portfolio project: **FastAPI** backend + **Next.js** frontend, cookie-based JWT auth.
 
+**Live demo:** https://your-clipse-app.vercel.app <!-- TODO: replace with your deployed Vercel URL -->
+
 ## Features
 
 - Named clipboards, each a stream of text/image entries
