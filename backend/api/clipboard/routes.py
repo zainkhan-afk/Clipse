@@ -46,6 +46,14 @@ def register(request: RegisterRequest, db: Session = Depends(auth.get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    if auth.SKIP_EMAIL_VERIFICATION:
+        # Local/dev: the account is created already verified, so skip email entirely.
+        return {
+            "message": "Account created — you can sign in now.",
+            "email": user.email,
+            "verification_skipped": True,
+        }
+
     try:
         send_verification_email(user.email, user.first_name, _verify_url(user.verification_token))
     except Exception:

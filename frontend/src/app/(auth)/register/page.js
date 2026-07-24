@@ -23,9 +23,14 @@ export default function Register() {
     setError("");
     setBusy(true);
     try {
-      await register(registrationData);
-      // Account created; user must confirm their email before they can sign in.
-      setSentTo(registrationData.email);
+      const data = await register(registrationData);
+      if (data?.verification_skipped) {
+        // Local/dev: no email step — the account is ready to use.
+        router.push("/login?registered=1");
+      } else {
+        // Account created; user must confirm their email before they can sign in.
+        setSentTo(registrationData.email);
+      }
     } catch (err) {
       setError(err.message || "Unable to create account.");
     } finally {

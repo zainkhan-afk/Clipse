@@ -11,14 +11,16 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [verified, setVerified] = useState(null);
   const [reset, setReset] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
-  // Read flags set by redirects: `verified` (post email-verification) and
-  // `reset` (after a successful password reset).
+  // Read flags set by redirects: `verified` (post email-verification), `reset`
+  // (after a password reset), and `registered` (sign-up with email skipped).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const flag = params.get("verified");
     if (flag === "1" || flag === "0") setVerified(flag);
     if (params.get("reset") === "1") setReset(true);
+    if (params.get("registered") === "1") setRegistered(true);
   }, []);
 
   async function handleLogin(e) {
@@ -55,6 +57,11 @@ export default function Login() {
       {reset && (
         <p className="mt-6 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-600 dark:text-green-400">
           Password updated — sign in with your new password.
+        </p>
+      )}
+      {registered && (
+        <p className="mt-6 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-600 dark:text-green-400">
+          Account created — sign in to get started.
         </p>
       )}
 
