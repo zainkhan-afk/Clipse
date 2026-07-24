@@ -153,11 +153,11 @@ export default function ClipboardPage() {
   const handleCopyImage = async (messageId) => {
     try {
       // Images live in a private blob store; fetch them through our authenticated
-      // proxy (cookie-auth, same-origin in prod). no-store avoids reusing the
-      // <img> tag's cached response.
+      // proxy (cookie-auth, same-origin in prod). The <img> uses
+      // crossOrigin="use-credentials", so its cached response is a credentialed
+      // CORS response this fetch can safely reuse.
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/images/${messageId}`, {
         credentials: "include",
-        cache: "no-store",
       });
       const blob = await response.blob();
       const clipboardItem = new ClipboardItem({ [blob.type]: blob });
@@ -325,6 +325,7 @@ export default function ClipboardPage() {
                             <img
                               src={`${process.env.NEXT_PUBLIC_API_URL}/images/${message.id}`}
                               alt="Clipboard image"
+                              crossOrigin="use-credentials"
                               className="max-h-80 w-auto rounded-lg border border-line"
                             />
                           )}

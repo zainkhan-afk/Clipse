@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   ClipboardList,
@@ -35,35 +35,29 @@ const navItems = [
 export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { UserData, loading: userLoading } = useUser();
-  const { ClipboardsData, loading: clipboardsLoading, refresh: refreshClipboards } = useClipboards();
+  const { UserData } = useUser();
+  const { ClipboardsData, refresh: refreshClipboards } = useClipboards();
 
-  const [userInfo, setUserInfo] = useState({});
-  const [navigationItems, setNavigationItems] = useState(navItems);
   const [createNewClipboardModalOpen, setCreateNewClipboardModalOpen] = useState(false);
   const [clipboardCreationFailure, setClipboardCreationFailure] = useState(false);
   const [userSettingsOpen, setUserSettingsOpen] = useState(false);
+  const [openMap, setOpenMap] = useState(() =>
+    Object.fromEntries(navItems.map((i) => [i.name, i.isOpen]))
+  );
 
-  useEffect(() => {
-    if (!clipboardsLoading && ClipboardsData) {
-      setNavigationItems((prev) =>
-        prev.map((item) =>
-          item.name === "Clipboards"
-            ? { ...item, children: ClipboardsData.map((c) => ({ id: c.id, name: c.name, color: c.color })) }
-            : item
-        )
-      );
-    }
-  }, [ClipboardsData, clipboardsLoading]);
-
-  useEffect(() => {
-    if (!userLoading) setUserInfo(UserData);
-  }, [UserData, userLoading]);
+  // Derive the nav tree during render (no effect): clipboards come from context,
+  // and each section's collapsed/expanded state lives in `openMap`.
+  const navigationItems = navItems.map((item) => ({
+    ...item,
+    isOpen: openMap[item.name],
+    children:
+      item.name === "Clipboards"
+        ? (ClipboardsData ?? []).map((c) => ({ id: c.id, name: c.name, color: c.color }))
+        : item.children,
+  }));
 
   const toggle = (name) => {
-    setNavigationItems((prev) =>
-      prev.map((item) => (item.name === name ? { ...item, isOpen: !item.isOpen } : item))
-    );
+    setOpenMap((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
   const handleCreateNewClipboard = async (clipboardData) => {
@@ -87,7 +81,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
   };
 
   const initials =
-    `${userInfo?.first_name?.[0] ?? ""}${userInfo?.last_name?.[0] ?? ""}`.toUpperCase() || "·";
+    `${UserData?.first_name?.[0] ?? ""}${UserData?.last_name?.[0] ?? ""}`.toUpperCase() || "·";
 
   return (
     <aside
@@ -233,11 +227,11 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium text-ink">
-                {userInfo?.first_name
-                  ? `${userInfo.first_name} ${userInfo.last_name ?? ""}`.trim()
+                {UserData?.first_name
+                  ? `${UserData.first_name} ${UserData.last_name ?? ""}`.trim()
                   : "Account"}
               </span>
-              <span className="block truncate text-xs text-faint">{userInfo?.email ?? ""}</span>
+              <span className="block truncate text-xs text-faint">{UserData?.email ?? ""}</span>
             </span>
             <ChevronDown
               className={`h-4 w-4 text-faint transition-transform ${userSettingsOpen ? "rotate-180" : ""}`}

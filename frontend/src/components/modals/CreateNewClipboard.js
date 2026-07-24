@@ -8,9 +8,13 @@ export default function CreateNewClipboardModal({ isOpen, onClose, onConfirm, cl
   const [clipboardData, setClipboardData] = useState({ name: "" });
   const [mounted, setMounted] = useState(false);
 
+  // The portal target (document.body) only exists after mount.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
+    // Reset the field whenever the modal closes so it reopens empty.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isOpen) setClipboardData({ name: "" });
   }, [isOpen]);
 

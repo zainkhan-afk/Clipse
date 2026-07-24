@@ -24,13 +24,17 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState("light");
 
   // Initialise from the stored preference (the pre-paint script already set the class).
+  // localStorage and the <html> class only exist after mount — SSR has neither and a
+  // lazy initializer would cause a hydration mismatch — so this sync is intentional.
   useEffect(() => {
     let stored = "system";
     try {
       stored = localStorage.getItem("clipse-theme") || "system";
     } catch {}
+    /* eslint-disable react-hooks/set-state-in-effect */
     setPreferenceState(stored);
     setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   // While following the OS, react to system theme changes live.
