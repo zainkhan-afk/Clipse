@@ -10,6 +10,7 @@ import {
   deleteAccount,
 } from "@/api/auth";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { passwordProblem, PASSWORD_HINT } from "@/lib/password";
 
 export default function Settings() {
   const { UserData, refresh } = useUser();
@@ -142,12 +143,13 @@ function SecuritySection() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  const canSave = current.length > 0 && next.length >= 8 && next === confirm;
+  const canSave = current.length > 0 && !passwordProblem(next) && next === confirm;
 
   async function save() {
     setMsg(null);
-    if (next.length < 8) {
-      setMsg({ ok: false, text: "New password must be at least 8 characters." });
+    const pwErr = passwordProblem(next);
+    if (pwErr) {
+      setMsg({ ok: false, text: pwErr });
       return;
     }
     if (next !== confirm) {
@@ -192,6 +194,7 @@ function SecuritySection() {
           value={confirm}
           onChange={setConfirm}
         />
+        <p className="text-xs text-faint">{PASSWORD_HINT}</p>
       </div>
 
       {msg && (

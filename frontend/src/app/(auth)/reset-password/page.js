@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { resetPassword } from "@/api/auth";
+import { passwordProblem, PASSWORD_HINT } from "@/lib/password";
 
 export default function ResetPassword() {
   const router = useRouter();
@@ -20,8 +21,9 @@ export default function ResetPassword() {
   async function handleSubmit(e) {
     e?.preventDefault();
     setError("");
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    const pwErr = passwordProblem(password);
+    if (pwErr) {
+      setError(pwErr);
       return;
     }
     if (password !== confirm) {
@@ -61,7 +63,7 @@ export default function ResetPassword() {
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm animate-rise">
       <h2 className="text-2xl">Choose a new password</h2>
-      <p className="mt-1.5 text-sm text-muted">Pick something at least 8 characters long.</p>
+      <p className="mt-1.5 text-sm text-muted">{PASSWORD_HINT}</p>
 
       <div className="mt-8 flex flex-col gap-4">
         <Field
