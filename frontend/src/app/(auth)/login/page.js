@@ -30,7 +30,11 @@ export default function Login() {
     try {
       const data = await login(loginData);
       if (data.access_token) {
-        router.push("/dashboard");
+        // Hard navigation (not router.push): login just set the auth cookies, and a
+        // full load guarantees the proxy middleware re-runs with them and the protected
+        // layout mounts fresh. A soft client-side push can reuse stale (logged-out)
+        // router state — on mobile this left users stuck on /login until a manual refresh.
+        window.location.href = "/dashboard";
       }
     } catch (err) {
       setError(err.message || "Unable to sign in.");
