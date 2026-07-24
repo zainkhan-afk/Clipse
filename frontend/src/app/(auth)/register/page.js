@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, MailCheck } from "lucide-react";
 import { register, resendVerification } from "@/api/auth";
+import { passwordProblem, PASSWORD_HINT } from "@/lib/password";
 
 export default function Register() {
   const router = useRouter();
@@ -21,11 +22,21 @@ export default function Register() {
   async function handleRegistration(e) {
     e?.preventDefault();
     setError("");
+    const pwErr = passwordProblem(registrationData.password);
+    if (pwErr) {
+      setError(pwErr);
+      return;
+    }
     setBusy(true);
     try {
-      await register(registrationData);
-      // Account created; user must confirm their email before they can sign in.
-      setSentTo(registrationData.email);
+      const data = await register(registrationData);
+      if (data?.verification_skipped) {
+        // Local/dev: no email step — the account is ready to use.
+        router.push("/login?registered=1");
+      } else {
+        // Account created; user must confirm their email before they can sign in.
+        setSentTo(registrationData.email);
+      }
     } catch (err) {
       setError(err.message || "Unable to create account.");
     } finally {
@@ -106,6 +117,7 @@ export default function Register() {
           value={registrationData.email} onChange={set("email")} />
         <Field label="Password" type="password" placeholder="••••••••" autoComplete="new-password"
           value={registrationData.password} onChange={set("password")} />
+        <p className="-mt-1 text-xs text-faint">{PASSWORD_HINT}</p>
       </div>
 
       {error && (

@@ -11,6 +11,10 @@ FRONTEND_DIR="$ROOT/frontend"
 BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 
+# Local dev: create accounts already verified so you don't need SMTP configured.
+# Run `SKIP_EMAIL_VERIFICATION=false ./run.sh` to exercise the real email flow.
+export SKIP_EMAIL_VERIFICATION="${SKIP_EMAIL_VERIFICATION:-true}"
+
 # Pick the backend Python: prefer the project virtualenv, fall back to python3.
 if [ -x "$BACKEND_DIR/.venv/bin/python" ]; then
   PY="$BACKEND_DIR/.venv/bin/python"

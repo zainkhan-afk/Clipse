@@ -41,10 +41,22 @@ router = APIRouter()
 
 @router.post("/auth/register")
 def register(request: RegisterRequest, db: Session = Depends(auth.get_db)):
+    problem = auth.password_problem(request.password)
+    if problem:
+        raise HTTPException(status_code=400, detail=problem)
+
     try:
         user = auth.register_user(db, request.email, request.password, request.first_name, request.last_name)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    if auth.SKIP_EMAIL_VERIFICATION:
+        # Local/dev: the account is created already verified, so skip email entirely.
+        return {
+            "message": "Account created — you can sign in now.",
+            "email": user.email,
+            "verification_skipped": True,
+        }
 
     try:
         send_verification_email(user.email, user.first_name, _verify_url(user.verification_token))
@@ -118,8 +130,9 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(auth.get
     if not user:
         raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
 
-    if len(request.password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+    problem = auth.password_problem(request.password)
+    if problem:
+        raise HTTPException(status_code=400, detail=problem)
 
     auth.update_user_password(db, user, request.password)
     return {"message": "Password updated. You can sign in now."}
@@ -223,8 +236,10 @@ def update_me(data: UpdateProfileRequest, current_user=Depends(auth.get_current_
 def change_password(data: ChangePasswordRequest, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     if not auth.verify_password(data.current_password, current_user.password_hash):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-    if len(data.new_password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
+    problem = auth.password_problem(data.new_password)
+    if problem:
+        raise HTTPException(status_code=400, detail=problem)
 
     current_user.password_hash = auth.hash_password(data.new_password)
     db.commit()

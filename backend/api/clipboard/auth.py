@@ -1,4 +1,5 @@
 import os
+import re
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
 from api.clipboard import models
@@ -18,6 +19,10 @@ ACCESS_TOKEN_EXPIRE_SECONDS = 60*60
 REFRESH_TOKEN_EXPIRE_SECONDS = 60*60*24*7
 REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY", "CLIPBOARD_REFRESH_SECRET_KEY_SHOULD_BE_LONG")
 PASSWORD_RESET_SECRET_KEY = os.environ.get("PASSWORD_RESET_SECRET_KEY", "CLIPBOARD_PASSWORD_RESET_SECRET_KEY_SHOULD_BE_LONG")
+
+# When true (local/dev only), registration creates an already-verified account and
+# sends no verification email. Never enable this in production.
+SKIP_EMAIL_VERIFICATION = os.environ.get("SKIP_EMAIL_VERIFICATION", "").lower() in ("1", "true", "yes")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -70,6 +75,21 @@ def hash_password(password: str):
 
 def verify_password(password, hashed):
     return pwd_context.verify(password, hashed)
+
+MIN_PASSWORD_LENGTH = 8
+MAX_PASSWORD_LENGTH = 72  # bcrypt only hashes the first 72 bytes
+
+def password_problem(password: str):
+    """Return a human-readable reason the password is unacceptable, or None if it's OK."""
+    if not password or len(password) < MIN_PASSWORD_LENGTH:
+        return f"Password must be at least {MIN_PASSWORD_LENGTH} characters."
+    if len(password.encode("utf-8")) > MAX_PASSWORD_LENGTH:
+        return f"Password must be at most {MAX_PASSWORD_LENGTH} characters."
+    if not re.search(r"[A-Za-z]", password):
+        return "Password must contain at least one letter."
+    if not re.search(r"[0-9]", password):
+        return "Password must contain at least one number."
+    return None
 
 def update_user_password(db: Session, user, new_password: str):
     # Receiving the reset email proves control of the address, so also mark the
@@ -132,7 +152,7 @@ def register_user(db: Session, email: str, password: str, first_name: str, last_
         first_name = first_name,
         last_name = last_name,
         verification_token=verification_token,
-        is_verified=False,
+        is_verified=SKIP_EMAIL_VERIFICATION,
     )
     db.add(new_user)
     db.commit()
