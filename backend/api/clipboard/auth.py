@@ -16,7 +16,10 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "CLIPBOARD_SECRET_KEY_SHOULD_BE_LONG")
 EMAIL_VERIFY_SECRET_KEY = os.environ.get("EMAIL_VERIFY_SECRET_KEY", "CLIPBOARD_EMAIL_VERIFY_SECRET_KEY_SHOULD_BE_LONG")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_SECONDS = 60*60
-REFRESH_TOKEN_EXPIRE_SECONDS = 60*60*24*7
+# 30 days. This slides forward on every /auth/refresh (see routes.py), so an
+# actively-used account effectively stays logged in indefinitely — you'd have to
+# not open the app for a full 30 days to be signed out.
+REFRESH_TOKEN_EXPIRE_SECONDS = 60*60*24*30
 REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY", "CLIPBOARD_REFRESH_SECRET_KEY_SHOULD_BE_LONG")
 PASSWORD_RESET_SECRET_KEY = os.environ.get("PASSWORD_RESET_SECRET_KEY", "CLIPBOARD_PASSWORD_RESET_SECRET_KEY_SHOULD_BE_LONG")
 
