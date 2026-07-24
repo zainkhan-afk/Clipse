@@ -29,6 +29,9 @@ async function toPngBlob(blob) {
   }
 }
 
+// How often to quietly poll for new clipboard items (ms).
+const POLL_INTERVAL_MS = 4000;
+
 export default function ClipboardPage() {
   const params = useParams();
   const { slug } = params;
@@ -71,6 +74,37 @@ export default function ClipboardPage() {
     }
     fetchData();
   }, [slug, refreshMessages]);
+
+  // Auto-refresh: quietly poll for new items so entries added from another device
+  // appear on their own. Only runs while the tab is visible, and refreshes right
+  // away when the user returns to it. This is a silent update — no loading state —
+  // so existing items stay put and only genuinely new ones animate in.
+  useEffect(() => {
+    if (!slug) return;
+
+    let cancelled = false;
+    const poll = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const data = await getClipboardData(slug);
+        if (!cancelled) setClipboardData(data);
+      } catch {
+        // Ignore transient poll failures; the next tick retries.
+      }
+    };
+
+    const interval = setInterval(poll, POLL_INTERVAL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [slug]);
 
   const sendText = async (text) => {
     const formData = new FormData();
