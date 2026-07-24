@@ -178,6 +178,9 @@ def refresh(response: Response, refresh_token: str = Cookie(None)):
         raise HTTPException(status_code=401)
 
     new_access_token = auth.create_access_token({"sub": payload["sub"]})
+    # Slide the session forward: hand back a fresh refresh token on every refresh so
+    # an actively-used account never gets logged out (the 30-day clock keeps resetting).
+    new_refresh_token = auth.create_refresh_token({"sub": payload["sub"]})
 
     response.set_cookie(
         key="access_token",
@@ -186,6 +189,16 @@ def refresh(response: Response, refresh_token: str = Cookie(None)):
         samesite="lax",
         secure=True,
         max_age=auth.ACCESS_TOKEN_EXPIRE_SECONDS,
+        path="/",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        samesite="lax",
+        secure=True,
+        max_age=auth.REFRESH_TOKEN_EXPIRE_SECONDS,
+        path="/",
     )
 
     return {"message": "refreshed"}

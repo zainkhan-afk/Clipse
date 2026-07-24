@@ -1,9 +1,16 @@
 # Clipse
 
-A minimal, cross-device clipboard. Create named clipboards, drop in **text or images**,
-and reach them from any signed-in device — copy here, paste there.
+Clipse is a minimal, cross-device clipboard that keeps your text and images in sync
+across every device you sign in on. Copy something on your phone and paste it on your
+laptop moments later — no emailing yourself links or pinging a chat just to move a
+snippet between screens. Content is organized into named **clipboards** (e.g. `work`,
+`phone`, `scratch`), each holding a running stream of **text or image** entries. Any
+clipboard can be given a time-to-live so its entries expire on their own — handy for
+one-time codes and anything you'd rather not leave lying around.
 
 Portfolio project: **FastAPI** backend + **Next.js** frontend, cookie-based JWT auth.
+
+**Live demo:** https://clipse-app.vercel.app
 
 ## Features
 
@@ -69,3 +76,7 @@ The backend reads config from environment variables, with safe local fallbacks w
 Text sharing works with zero extra config; email and image upload need the vars above.
 
 Architecture and deployment notes live in [`CLAUDE.md`](CLAUDE.md).
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).
