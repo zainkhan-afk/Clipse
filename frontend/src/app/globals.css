@@ -129,6 +129,9 @@ body {
 
   .animate-rise { animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
   .animate-fade { animation: fade 0.4s ease both; }
+
+  /* gentle float for the landing-page copy → paste backdrop marks */
+  .copy-mark { animation: drift 12s ease-in-out infinite; }
 }
 
 @keyframes ping-ring {
@@ -144,4 +147,13 @@ body {
 @keyframes fade {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copy-mark { animation: none; }
 }
