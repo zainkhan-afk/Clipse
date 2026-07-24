@@ -15,8 +15,8 @@ export function proxy(req) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Prevent logged-in users from seeing login/register
-  if (token && (pathname === "/login" || pathname === "/register")) {
+  // Prevent logged-in users from seeing the landing/login/register pages
+  if (token && (pathname === "/" || pathname === "/login" || pathname === "/register")) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
@@ -24,5 +24,5 @@ export function proxy(req) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/settings/:path*", "/clipboards/:path*", "/login", "/register"],
+  matcher: ["/", "/dashboard/:path*", "/settings/:path*", "/clipboards/:path*", "/login", "/register"],
 };
