@@ -72,10 +72,9 @@ export default function Dashboard() {
                   )}
                   <span className="truncate">{c.name}</span>
                 </h3>
-                <p className="mt-1 font-mono text-xs text-faint">
-                  #{c.id}
-                  {c.persistance ? ` · ${formatTTL(c.persistance)}` : ""}
-                </p>
+                {c.persistance ? (
+                  <p className="mt-1 font-mono text-xs text-faint">{formatTTL(c.persistance)}</p>
+                ) : null}
               </Link>
             ))}
           </div>

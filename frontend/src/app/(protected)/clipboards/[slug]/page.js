@@ -205,7 +205,6 @@ export default function ClipboardPage() {
       <div className="mx-auto flex h-full w-full max-w-6xl flex-1 flex-col px-5 py-6 sm:px-8 sm:py-8">
         {/* Header */}
         <div className="flex items-baseline gap-3 animate-rise">
-          <span className="font-mono text-sm text-faint">#{slug}</span>
           <h1 className="truncate text-2xl font-semibold tracking-tight">
             {clipboardData?.clipboard?.name ?? "Clipboard"}
           </h1>
