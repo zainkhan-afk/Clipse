@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Copy, Trash2, Paperclip, SendHorizontal, Check, ImageIcon, Type, X } from "lucide-react";
+import { Copy, Trash2, Paperclip, ClipboardPaste, SendHorizontal, Check, ImageIcon, Type, X } from "lucide-react";
 
 import TooltipWrapper from "@/components/primitives/TooltipWrapper";
 import ClipboardAbout from "@/components/ClipboardAbout";
@@ -168,6 +168,42 @@ export default function ClipboardPage() {
     }
   };
 
+  // Explicit "paste" for touch devices: mobile browsers don't deliver image files
+  // through the `paste` event, so read the clipboard directly on a button tap.
+  // Needs HTTPS + a user gesture and may prompt for clipboard permission.
+  const handlePasteFromClipboard = async () => {
+    if (!navigator.clipboard?.read) {
+      showCopyNote("Can't read the clipboard here — use the attach button instead.");
+      return;
+    }
+    try {
+      const items = await navigator.clipboard.read();
+      const files = [];
+      let pastedText = "";
+      for (const item of items) {
+        const imageType = item.types.find((t) => t.startsWith("image/"));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          const ext = (imageType.split("/")[1] || "png").split("+")[0];
+          files.push(new File([blob], `pasted-${Date.now()}.${ext}`, { type: blob.type }));
+        } else if (item.types.includes("text/plain")) {
+          const blob = await item.getType("text/plain");
+          pastedText = (await blob.text()).trim();
+        }
+      }
+      if (files.length) {
+        stageImages(files);
+      } else if (pastedText) {
+        setTextToSend((prev) => (prev ? `${prev}${pastedText}` : pastedText));
+      } else {
+        showCopyNote("Nothing to paste from the clipboard.");
+      }
+    } catch (err) {
+      console.error("Failed to paste from clipboard:", err);
+      showCopyNote("Couldn't read the clipboard. Grant clipboard access or use attach.");
+    }
+  };
+
   const handleCopyText = (text, id) => {
     navigator.clipboard.writeText(text).then(() => flashCopied(id));
   };
@@ -315,6 +351,15 @@ export default function ClipboardPage() {
                       e.target.value = "";
                     }}
                   />
+                  <TooltipWrapper label="Paste from clipboard">
+                    <button
+                      type="button"
+                      onClick={handlePasteFromClipboard}
+                      className="grid h-9 w-9 place-items-center rounded-lg text-muted transition-colors hover:bg-raised hover:text-ink"
+                    >
+                      <ClipboardPaste className="h-[18px] w-[18px]" />
+                    </button>
+                  </TooltipWrapper>
                   <TooltipWrapper label="Attach image">
                     <button
                       type="button"
