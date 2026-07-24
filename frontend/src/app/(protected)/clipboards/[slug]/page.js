@@ -11,10 +11,29 @@ import DeleteMessageConfirmationModal from "@/components/modals/DeleteMessage";
 import { getClipboardData, sendToClipboard, deleteMessage } from "@/api/clipboard";
 import { parseServerDate } from "@/lib/datetime";
 
+// Mobile Safari only accepts image/png on the clipboard, so normalize whatever
+// format the image was stored in (JPEG/WebP/…) to PNG via a canvas before copying.
+async function toPngBlob(blob) {
+  if (blob.type === "image/png") return blob;
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0);
+    const png = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!png) throw new Error("PNG conversion failed");
+    return png;
+  } finally {
+    bitmap.close?.();
+  }
+}
+
 export default function ClipboardPage() {
   const params = useParams();
   const { slug } = params;
   const fileInputRef = useRef(null);
+  const copyNoteTimer = useRef(null);
 
   const [textToSend, setTextToSend] = useState("");
   const [pendingImages, setPendingImages] = useState([]); // staged, not yet uploaded
@@ -23,6 +42,7 @@ export default function ClipboardPage() {
   const [refreshMessages, setRefreshMessages] = useState(false);
   const [messageDeleteModalOpen, setMessageDeleteModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [copyNote, setCopyNote] = useState(""); // transient feedback toast (mobile has no hover tooltips)
   const [clipboardData, setClipboardData] = useState({});
 
   // Release object URLs for any still-staged previews when leaving the page.
@@ -31,6 +51,7 @@ export default function ClipboardPage() {
     pendingRef.current = pendingImages;
   }, [pendingImages]);
   useEffect(() => () => pendingRef.current.forEach((p) => URL.revokeObjectURL(p.url)), []);
+  useEffect(() => () => { if (copyNoteTimer.current) clearTimeout(copyNoteTimer.current); }, []);
 
   const formatter = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
@@ -152,26 +173,47 @@ export default function ClipboardPage() {
   };
 
   const handleCopyImage = async (messageId) => {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/images/${messageId}`;
+
+    // Writing an image to the clipboard needs a secure context (HTTPS) plus the async
+    // Clipboard API. Over plain HTTP (e.g. testing on a phone via the LAN) these are
+    // missing, so guide the user to the native long-press gesture instead of failing
+    // silently.
+    if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) {
+      showCopyNote("Long-press the image to copy or save it.");
+      return;
+    }
+
     try {
       // Images live in a private blob store; fetch them through our authenticated
-      // proxy (cookie-auth, same-origin in prod). The <img> uses
-      // crossOrigin="use-credentials", so its cached response is a credentialed
-      // CORS response this fetch can safely reuse.
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/images/${messageId}`, {
-        credentials: "include",
-      });
-      const blob = await response.blob();
-      const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-      await navigator.clipboard.write([clipboardItem]);
+      // proxy (cookie-auth, same-origin in prod). Build the ClipboardItem from a
+      // *promise* and call write() synchronously so mobile browsers (iOS Safari
+      // especially) keep the tap's user-activation alive while the image downloads
+      // and is converted to PNG — the only image type Safari will put on the clipboard.
+      const pngBlob = fetch(url, { credentials: "include" })
+        .then((res) => {
+          if (!res.ok) throw new Error("Image fetch failed");
+          return res.blob();
+        })
+        .then(toPngBlob);
+
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
       flashCopied(messageId);
     } catch (err) {
       console.error("Failed to copy image:", err);
+      showCopyNote("Couldn't copy — long-press the image to copy or save it.");
     }
   };
 
   const flashCopied = (id) => {
     setCopiedId(id);
     setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 1400);
+  };
+
+  const showCopyNote = (text) => {
+    setCopyNote(text);
+    if (copyNoteTimer.current) clearTimeout(copyNoteTimer.current);
+    copyNoteTimer.current = setTimeout(() => setCopyNote(""), 2800);
   };
 
   const handleOpenMessageDeleteModal = (message) => {
@@ -389,6 +431,14 @@ export default function ClipboardPage() {
         onClose={() => setMessageDeleteModalOpen(false)}
         onConfirm={handleDeleteMessage}
       />
+
+      {copyNote && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
+          <div className="pointer-events-auto max-w-xs rounded-xl border border-line bg-surface px-4 py-2.5 text-center text-sm text-ink shadow-[var(--shadow)]">
+            {copyNote}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
