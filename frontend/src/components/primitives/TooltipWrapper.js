@@ -1,15 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
 
 export default function TooltipWrapper({ label, children }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return children;
-
   return (
     <span className="group/tip relative inline-flex items-center">
       {children}

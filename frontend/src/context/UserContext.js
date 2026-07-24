@@ -8,23 +8,27 @@ export const UserProvider = ({ children }) => {
   const [UserData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Function to fetch data
-  const fetchData = async () => {
-    setLoading(true);
+  // `load` sets state only after awaiting, so the mount effect never calls
+  // setState synchronously. `refresh` adds the loading flip for manual refetches.
+  const load = async () => {
     const data = await getProfile();
     setUserData(data);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchData();
+  const refresh = async () => {
+    setLoading(true);
+    await load();
+  };
 
-    // const interval = setInterval(fetchData, 10000); // refresh every 10 seconds
-    // return () => clearInterval(interval);
+  useEffect(() => {
+    // Fetch once on mount; setState only runs after the awaited request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
   }, []);
 
   return (
-    <UserContext.Provider value={{ UserData, loading, refresh: fetchData }}>
+    <UserContext.Provider value={{ UserData, loading, refresh }}>
       {children}
     </UserContext.Provider>
   );
