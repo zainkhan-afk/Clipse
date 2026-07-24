@@ -75,4 +75,6 @@ The backend reads config from environment variables, with safe local fallbacks w
 
 Text sharing works with zero extra config; email and image upload need the vars above.
 
-Architecture and deployment notes live in [`CLAUDE.md`](CLAUDE.md).
+## License
+
+MIT — see [`LICENSE`](LICENSE).
