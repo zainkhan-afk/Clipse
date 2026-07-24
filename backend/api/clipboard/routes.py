@@ -137,7 +137,7 @@ def login(request: LoginRequest, response: Response, db: Session = Depends(auth.
         value=token,
         httponly=True,
         secure=True,
-        samesite="none",
+        samesite="lax",
         max_age=auth.ACCESS_TOKEN_EXPIRE_SECONDS,
         path="/"
     )
@@ -147,7 +147,7 @@ def login(request: LoginRequest, response: Response, db: Session = Depends(auth.
         value=refresh_token,
         httponly=True,
         secure=True,
-        samesite="none",
+        samesite="lax",
         max_age=auth.REFRESH_TOKEN_EXPIRE_SECONDS,
         path="/"
     )
@@ -170,7 +170,7 @@ def refresh(response: Response, refresh_token: str = Cookie(None)):
         key="access_token",
         value=new_access_token,
         httponly=True,
-        samesite="none",
+        samesite="lax",
         secure=True,
         max_age=auth.ACCESS_TOKEN_EXPIRE_SECONDS,
     )
@@ -234,8 +234,8 @@ def change_password(data: ChangePasswordRequest, current_user=Depends(auth.get_c
 @router.delete("/auth/me")
 def delete_me(response: Response, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
     result = delete_user_account(db, current_user.id)
-    response.delete_cookie(key="access_token", path="/", samesite="none", secure=True)
-    response.delete_cookie(key="refresh_token", path="/", samesite="none", secure=True)
+    response.delete_cookie(key="access_token", path="/", samesite="lax", secure=True)
+    response.delete_cookie(key="refresh_token", path="/", samesite="lax", secure=True)
     return result
 
 
@@ -322,14 +322,14 @@ def logout(response: Response):
     response.delete_cookie(
         key="access_token",
         path="/",
-        samesite="none",
+        samesite="lax",
         secure=True,  # must match how it was set
     )
 
     response.delete_cookie(
         key="refresh_token",
         path="/",
-        samesite="none",
+        samesite="lax",
         secure=True,
     )
 
