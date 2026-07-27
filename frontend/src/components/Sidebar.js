@@ -52,7 +52,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
     isOpen: openMap[item.name],
     children:
       item.name === "Clipboards"
-        ? (ClipboardsData ?? []).map((c) => ({ id: c.id, name: c.name, color: c.color }))
+        ? (ClipboardsData ?? []).map((c) => ({ id: c.id, slug: c.slug, name: c.name, color: c.color }))
         : item.children,
   }));
 
