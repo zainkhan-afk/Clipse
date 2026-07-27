@@ -30,6 +30,7 @@ from api.clipboard.service import get_clipboards \
                                 , delete_all_messages \
                                 , delete_entire_clipboard \
                                 , get_clipboard_for_user \
+                                , get_clipboard_for_user_by_slug \
                                 , update_clipboard \
                                 , get_clipboard_image \
                                 , purge_expired \
@@ -284,14 +285,17 @@ def clipboards(data: ClipboardCreateRequest, current_user=Depends(auth.get_curre
 
     return {
         "message": "Clipboard successfully created",
-        "id": new_clipboard.id
+        "id": new_clipboard.id,
+        "slug": new_clipboard.slug,
     }
 
 
 @router.get("/clipboards/{slug}", response_model = CurrentClipboardData)
-def clipboard_data(slug:int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
-    all_clipboard_data = get_all_current_clipboard_data(db, user_id=current_user.id, clipboard_id=slug)
-    return all_clipboard_data
+def clipboard_data(slug: str, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    clipboard = get_clipboard_for_user_by_slug(db, current_user.id, slug)
+    if not clipboard:
+        raise HTTPException(status_code=404, detail="Clipboard not found")
+    return get_all_current_clipboard_data(db, user_id=current_user.id, clipboard_id=clipboard.id)
 
 
 @router.get("/cron/cleanup")
@@ -314,18 +318,18 @@ def clipboard_image(message_id: int, current_user=Depends(auth.get_current_user)
     return Response(content=content, media_type=media_type)
 
 
-@router.patch("/clipboards/{clipboard_id}")
+@router.patch("/clipboards/{slug}")
 def update_clipboard_settings(
-        clipboard_id: int,
+        slug: str,
         data: ClipboardUpdateRequest,
         current_user=Depends(auth.get_current_user),
         db: Session = Depends(auth.get_db),
     ):
-    clipboard = get_clipboard_for_user(db, current_user.id, clipboard_id)
+    clipboard = get_clipboard_for_user_by_slug(db, current_user.id, slug)
     if not clipboard:
         raise HTTPException(status_code=404, detail="Clipboard not found")
 
-    updated = update_clipboard(db, clipboard_id, data)
+    updated = update_clipboard(db, clipboard.id, data)
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -335,13 +339,13 @@ def update_clipboard_settings(
     return updated.to_dict()
 
 
-@router.delete("/clipboards/{clipboard_id}")
-def delete_clipboard(clipboard_id: int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
-    clipboard = get_clipboard_for_user(db, current_user.id, clipboard_id)
+@router.delete("/clipboards/{slug}")
+def delete_clipboard(slug: str, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    clipboard = get_clipboard_for_user_by_slug(db, current_user.id, slug)
     if not clipboard:
         raise HTTPException(status_code=404, detail="Clipboard not found")
 
-    return delete_entire_clipboard(db, clipboard_id)
+    return delete_entire_clipboard(db, clipboard.id)
 
 
 @router.post("/auth/logout")
@@ -365,7 +369,7 @@ def logout(response: Response):
 
 
 @router.post("/clipboards/{slug}")
-def add_clipboard_message(slug: int,
+def add_clipboard_message(slug: str,
         content_type: str = Form(...),
         content: str | None = Form(None),
         image: UploadFile | None = File(None),
@@ -373,7 +377,7 @@ def add_clipboard_message(slug: int,
         db: Session = Depends(auth.get_db)
     ):
 
-    clipboard = get_clipboard_for_user(db, current_user.id, slug)
+    clipboard = get_clipboard_for_user_by_slug(db, current_user.id, slug)
     if not clipboard:
         raise HTTPException(status_code=404, detail="Clipboard not found")
 
@@ -385,7 +389,7 @@ def add_clipboard_message(slug: int,
 
         new_message = add_clipboard_data_text(
             db,
-            clipboard_id=slug,
+            clipboard_id=clipboard.id,
             message = content_message
         )
 
@@ -395,7 +399,7 @@ def add_clipboard_message(slug: int,
 
         new_message = add_clipboard_data_image(
             db,
-            clipboard_id=slug,
+            clipboard_id=clipboard.id,
             image=image,
         )
 
@@ -405,29 +409,29 @@ def add_clipboard_message(slug: int,
     return new_message.to_dict()
 
 
-@router.delete("/clipboards/{clipboard_id}/messages/{message_id}")
+@router.delete("/clipboards/{slug}/messages/{message_id}")
 def delete_clipboard_message(
-        clipboard_id: int,
+        slug: str,
         message_id: int,
         current_user = Depends(auth.get_current_user),
         db: Session = Depends(auth.get_db),
     ):
 
-    clipboard = get_clipboard_for_user(db, current_user.id, clipboard_id)
+    clipboard = get_clipboard_for_user_by_slug(db, current_user.id, slug)
     if not clipboard:
         raise HTTPException(status_code=404, detail="Clipboard not found")
 
-    resp = delete_message(db, clipboard_id, message_id)
+    resp = delete_message(db, clipboard.id, message_id)
     if resp:
         return {"detail": "Message deleted successfully"}
     else:
         raise HTTPException(status_code=404, detail="Message not found")
 
 
-@router.delete("/clipboards/{clipboard_id}/messages")
-def delete_all_clipboard_messages(clipboard_id: int, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
-    clipboard = get_clipboard_for_user(db, current_user.id, clipboard_id)
+@router.delete("/clipboards/{slug}/messages")
+def delete_all_clipboard_messages(slug: str, current_user=Depends(auth.get_current_user), db: Session = Depends(auth.get_db)):
+    clipboard = get_clipboard_for_user_by_slug(db, current_user.id, slug)
     if not clipboard:
         raise HTTPException(status_code=404, detail="Clipboard not found")
 
-    return delete_all_messages(db, clipboard_id)
+    return delete_all_messages(db, clipboard.id)

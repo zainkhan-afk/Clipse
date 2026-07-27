@@ -101,7 +101,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
     setSaveError("");
     setSaved(false);
     try {
-      await updateClipboard(clipboard.id, {
+      await updateClipboard(clipboard.slug, {
         name: nameTrimmed,
         persistance: currentSeconds === 0 ? null : currentSeconds,
         color: color || null,
@@ -120,7 +120,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
     setActionBusy(true);
     setActionError("");
     try {
-      await deleteClipboard(clipboard.id);
+      await deleteClipboard(clipboard.slug);
       await refreshClipboards();
       router.push("/dashboard");
     } catch (err) {
@@ -134,7 +134,7 @@ export default function ClipboardSettings({ clipboard, count = 0, onRefresh }) {
     setActionBusy(true);
     setActionError("");
     try {
-      await clearClipboard(clipboard.id);
+      await clearClipboard(clipboard.slug);
       onRefresh?.();
       setConfirm(null);
     } catch (err) {

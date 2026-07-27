@@ -53,7 +53,7 @@ export default function Dashboard() {
             {clipboards.map((c, i) => (
               <Link
                 key={c.id}
-                href={`/clipboards/${c.id}`}
+                href={`/clipboards/${c.slug}`}
                 style={{ animationDelay: `${i * 50}ms` }}
                 className="group animate-rise rounded-2xl border border-line bg-surface p-5 shadow-[var(--shadow)] transition-all hover:-translate-y-0.5 hover:border-line-strong"
               >

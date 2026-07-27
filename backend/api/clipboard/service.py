@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from api.clipboard import models, auth
 from datetime import datetime, timedelta
 
@@ -9,6 +10,7 @@ from api.clipboard.schemas import ClipboardsResponse, ClipboardData \
 from api.clipboard.models import ContentType
 
 import uuid
+import secrets
 from vercel import blob
 
 
@@ -34,21 +36,40 @@ def _expiry_from(created_at: datetime, persistance):
 # CREATE CLIPBOARD
 # ----------------------------
 
+# URL-safe, unambiguous alphabet (no 0/O/1/l/i) for opaque public clipboard slugs.
+_SLUG_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"
+
+
+def new_slug(length: int = 7) -> str:
+    return "".join(secrets.choice(_SLUG_ALPHABET) for _ in range(length))
+
+
 def create_clipboard(db: Session, user_id: int, name: str):
     existing_db = db.query(models.Clipboard).filter(models.Clipboard.name == name, models.Clipboard.user_id == user_id).one_or_none()
     if existing_db:
         return None
     
     
-    clipboard = models.Clipboard(
-        user_id=user_id,
-        name=name,
-        created_at=datetime.utcnow()
-    )
-    db.add(clipboard)
-    db.commit()
-    db.refresh(clipboard)
-    return clipboard
+    # The DB UNIQUE constraint on slug is the real guarantee of uniqueness; on the
+    # astronomically rare collision the insert raises IntegrityError, so regenerate
+    # and retry a few times.
+    for _ in range(5):
+        clipboard = models.Clipboard(
+            user_id=user_id,
+            name=name,
+            slug=new_slug(),
+            created_at=datetime.utcnow(),
+        )
+        db.add(clipboard)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            continue
+        db.refresh(clipboard)
+        return clipboard
+
+    raise RuntimeError("Could not generate a unique clipboard slug")
 
 
 def get_clipboards(db: Session, user_id: int):
@@ -63,6 +84,14 @@ def get_clipboard_for_user(db: Session, user_id: int, clipboard_id: int):
     """Return the clipboard if it exists and belongs to the user, else None."""
     return db.query(models.Clipboard).filter(
         models.Clipboard.id == clipboard_id,
+        models.Clipboard.user_id == user_id,
+    ).first()
+
+
+def get_clipboard_for_user_by_slug(db: Session, user_id: int, slug: str):
+    """Return the clipboard with this public slug if it belongs to the user, else None."""
+    return db.query(models.Clipboard).filter(
+        models.Clipboard.slug == slug,
         models.Clipboard.user_id == user_id,
     ).first()
 

@@ -29,6 +29,9 @@ class Clipboard(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
+    # Opaque public identifier used in URLs so the numeric primary key isn't exposed.
+    # UNIQUE is the real guarantee of no collisions (see service.create_clipboard).
+    slug = Column(String, unique=True, index=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     persistance = Column(Integer, nullable=True)
     color = Column(String, nullable=True)
@@ -41,6 +44,7 @@ class Clipboard(Base):
         return {
             "id" : self.id,
             "name" : self.name,
+            "slug" : self.slug,
             "persistance" : self.persistance,
             "color" : self.color,
             "created_at" : self.created_at

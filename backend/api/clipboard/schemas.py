@@ -56,6 +56,7 @@ class MeResponse(BaseModel):
 class ClipboardsResponse(BaseModel):
     id: int
     name: str
+    slug: str
     persistance: int|None
     color: str|None = None
     created_at: UtcDatetime|None = None

@@ -144,7 +144,7 @@ export default function Sidebar({ mobileOpen = false, onClose = () => {} }) {
                   <span className="px-2 py-1.5 text-xs text-faint">No clipboards yet</span>
                 )}
                 {children?.map((child) => {
-                  const childHref = `${href}/${child.id}`;
+                  const childHref = `${href}/${child.slug}`;
                   const active = pathname === childHref;
                   return (
                     <Link
