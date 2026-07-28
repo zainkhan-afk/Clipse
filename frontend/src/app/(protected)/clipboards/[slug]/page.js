@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Copy, Trash2, Paperclip, ClipboardPaste, SendHorizontal, Check, ImageIcon, Type, X } from "lucide-react";
+import Link from "next/link";
+import { Copy, Trash2, Paperclip, ClipboardPaste, SendHorizontal, Check, ImageIcon, Type, X, FileQuestion } from "lucide-react";
 
 import TooltipWrapper from "@/components/primitives/TooltipWrapper";
 import ClipboardAbout from "@/components/ClipboardAbout";
@@ -47,6 +48,7 @@ export default function ClipboardPage() {
   const [copiedId, setCopiedId] = useState(null);
   const [copyNote, setCopyNote] = useState(""); // transient feedback toast (mobile has no hover tooltips)
   const [clipboardData, setClipboardData] = useState({});
+  const [status, setStatus] = useState("loading"); // "loading" | "ready" | "notfound" | "error"
 
   // Release object URLs for any still-staged previews when leaving the page.
   const pendingRef = useRef([]);
@@ -65,14 +67,25 @@ export default function ClipboardPage() {
   });
 
   useEffect(() => {
+    let cancelled = false;
     async function fetchData() {
-      if (slug) {
+      if (!slug) return;
+      try {
         const data = await getClipboardData(slug);
+        if (cancelled) return;
         setClipboardData(data);
+        setStatus("ready");
         setRefreshMessages(false);
+      } catch (err) {
+        // A bad/deleted slug 404s; anything else is a load error. Either way, render
+        // an explicit state instead of leaving an empty, half-loaded page.
+        if (!cancelled) setStatus(err?.status === 404 ? "notfound" : "error");
       }
     }
     fetchData();
+    return () => {
+      cancelled = true;
+    };
   }, [slug, refreshMessages]);
 
   // Auto-refresh: quietly poll for new items so entries added from another device
@@ -80,7 +93,7 @@ export default function ClipboardPage() {
   // away when the user returns to it. This is a silent update — no loading state —
   // so existing items stay put and only genuinely new ones animate in.
   useEffect(() => {
-    if (!slug) return;
+    if (!slug || status !== "ready") return;
 
     let cancelled = false;
     const poll = async () => {
@@ -88,8 +101,10 @@ export default function ClipboardPage() {
       try {
         const data = await getClipboardData(slug);
         if (!cancelled) setClipboardData(data);
-      } catch {
-        // Ignore transient poll failures; the next tick retries.
+      } catch (err) {
+        // If the clipboard was deleted while open, surface not-found; otherwise
+        // ignore the transient failure and let the next tick retry.
+        if (!cancelled && err?.status === 404) setStatus("notfound");
       }
     };
 
@@ -104,7 +119,7 @@ export default function ClipboardPage() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [slug]);
+  }, [slug, status]);
 
   const sendText = async (text) => {
     const formData = new FormData();
@@ -307,6 +322,47 @@ export default function ClipboardPage() {
   };
 
   const messages = clipboardData?.clipboard_data ?? [];
+
+  if (status === "notfound" || status === "error") {
+    const notFound = status === "notfound";
+    return (
+      <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center px-6 text-center">
+        <div className="max-w-sm animate-rise">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-accent-soft text-accent">
+            <FileQuestion className="h-6 w-6" />
+          </div>
+          <h1 className="mt-5 text-xl font-semibold tracking-tight">
+            {notFound ? "Clipboard not found" : "Couldn't load this clipboard"}
+          </h1>
+          <p className="mt-2 text-sm text-muted">
+            {notFound
+              ? "This clipboard doesn't exist or isn't yours. It may have been deleted, or the link is wrong."
+              : "Something went wrong loading this clipboard. Check your connection and try again."}
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <Link
+              href="/dashboard"
+              className="rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+            >
+              Back to dashboard
+            </Link>
+            {!notFound && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatus("loading");
+                  setRefreshMessages((v) => !v);
+                }}
+                className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface"
+              >
+                Try again
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
