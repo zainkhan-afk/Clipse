@@ -11,6 +11,7 @@ Run from the backend/ directory:
     python scripts/add_slugs.py
 """
 import os
+import secrets
 import sys
 
 # Make `api...` importable regardless of how this script is invoked.
@@ -19,7 +20,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import inspect, text
 
 from api.core.database import engine
-from api.clipboard.service import new_slug
+
+# Mirrors service.new_slug — inlined so this script imports only the DB engine and
+# sidesteps the service<->auth circular import that fires when service is imported first.
+_SLUG_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"
+
+
+def new_slug(length: int = 7) -> str:
+    return "".join(secrets.choice(_SLUG_ALPHABET) for _ in range(length))
 
 
 def main():
